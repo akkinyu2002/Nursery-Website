@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin Login | Lumbini Nursery</title>
+    <link rel="stylesheet" href="css/admin.css" />
+  </head>
+  <body class="admin-login-page">
+    <main class="admin-login">
+      <section class="admin-login__card">
+        <p class="eyebrow">Nursery Admin</p>
+        <h1>Order management login</h1>
+        <p>Frontend-only demo access for the owner or staff dashboard.</p>
+        <form data-admin-login>
+          <label><span>Username</span><input name="username" required placeholder="Enter username" /></label>
+          <label><span>Password</span><input name="password" required type="password" placeholder="Enter password" /></label>
+          <button type="submit">Login to Dashboard</button>
+        </form>
+        <p class="admin-login__note" data-login-note></p>
+        <a class="admin-login__back" href="index.html">Back to website</a>
+      </section>
+    </main>
+
+    <script src="js/data.js"></script>
+    <script src="js/products.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/admin-login.js"></script>
+  </body>
+</html>

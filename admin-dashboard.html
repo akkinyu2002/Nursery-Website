@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin Dashboard | Lumbini Nursery</title>
+    <link rel="stylesheet" href="css/admin.css" />
+  </head>
+  <body class="admin-page">
+    <div class="admin-shell">
+      <aside class="admin-sidebar">
+        <div>
+          <p class="eyebrow">Lumbini Nursery</p>
+          <h2>Order Dashboard</h2>
+          <p>Track customer orders placed from the storefront.</p>
+        </div>
+        <nav>
+          <a href="admin-dashboard.html" class="is-active">Orders Overview</a>
+          <a href="shop.html">Open Shop</a>
+          <a href="index.html">View Website</a>
+        </nav>
+      </aside>
+      <main class="admin-main">
+        <header class="admin-topbar">
+          <div>
+            <p class="eyebrow">Dashboard</p>
+            <h1>Nursery orders and status tracking</h1>
+          </div>
+          <div class="admin-topbar__actions">
+            <button type="button" data-admin-logout>Logout</button>
+          </div>
+        </header>
+
+        <section class="admin-stats" data-admin-stats></section>
+
+        <section class="admin-panel admin-panel--security" data-admin-security></section>
+
+        <section class="admin-panel">
+          <div class="admin-panel__head">
+            <div><h2>Orders Table</h2><p>Placed orders appear here using localStorage.</p></div>
+            <div class="admin-filters">
+              <input type="search" placeholder="Search orders" data-order-search />
+              <select data-order-filter>
+                <option value="all">All statuses</option>
+                <option value="pending">Pending</option>
+                <option value="confirmed">Confirmed</option>
+                <option value="processing">Processing</option>
+                <option value="delivered">Delivered</option>
+                <option value="cancelled">Cancelled</option>
+                <option value="archived">Archived</option>
+              </select>
+            </div>
+          </div>
+          <div class="admin-table-wrap" data-orders-table></div>
+        </section>
+      </main>
+    </div>
+    <div class="admin-modal" data-order-modal></div>
+
+    <script src="js/data.js"></script>
+    <script src="js/products.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/admin.js"></script>
+  </body>
+</html>
