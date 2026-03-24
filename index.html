@@ -131,8 +131,43 @@
         <div class="container">
           <div class="section-head">
             <div><p class="eyebrow">Customer feedback</p><h2>What local customers appreciate</h2></div>
+            <div class="review-summary reveal" data-feedback-summary>
+              <strong data-feedback-average>0.0</strong>
+              <span><span data-feedback-count>0</span> customer reviews</span>
+            </div>
           </div>
-          <div class="testimonial-grid" data-home-testimonials></div>
+          <div class="feedback-layout">
+            <div class="testimonial-grid" data-home-testimonials></div>
+            <form class="feedback-form reveal" data-feedback-form>
+              <p class="eyebrow">Share your experience</p>
+              <h3>Leave a star rating and short review</h3>
+              <label>
+                <span>Your name</span>
+                <input required type="text" name="name" placeholder="Your name" />
+              </label>
+              <label>
+                <span>Location</span>
+                <input type="text" name="location" placeholder="Butwal, Murgiya, Rupandehi" />
+              </label>
+              <div class="feedback-form__field">
+                <span>Your rating</span>
+                <div class="star-picker" data-star-picker>
+                  <button type="button" data-rating-value="1" aria-label="1 star">&#9733;</button>
+                  <button type="button" data-rating-value="2" aria-label="2 stars">&#9733;</button>
+                  <button type="button" data-rating-value="3" aria-label="3 stars">&#9733;</button>
+                  <button type="button" data-rating-value="4" aria-label="4 stars">&#9733;</button>
+                  <button type="button" data-rating-value="5" aria-label="5 stars">&#9733;</button>
+                </div>
+                <input type="hidden" name="rating" value="" />
+              </div>
+              <label>
+                <span>Your review</span>
+                <textarea required name="text" rows="5" placeholder="Tell other customers what you liked about the plants or service"></textarea>
+              </label>
+              <button class="btn btn--primary" type="submit">Submit feedback</button>
+              <p class="feedback-form__note" data-feedback-note></p>
+            </form>
+          </div>
         </div>
       </section>
 

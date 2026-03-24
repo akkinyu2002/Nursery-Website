@@ -2,6 +2,7 @@ window.NurseryData = (() => {
   const business = {
     name: "Lumbini Nursery and Plant service",
     shortName: "Lumbini Nursery",
+    logo: "https://upload.wikimedia.org/wikipedia/commons/c/cf/Zamioculcas_zamiifolia_1.jpg",
     phone: "+977 986-7155296",
     phoneHref: "tel:+9779867155296",
     whatsappHref: "https://wa.me/9779867155296",
@@ -53,10 +54,8 @@ window.NurseryData = (() => {
   ];
 
   const testimonials = [
-    { name: "Sushma K.C.", role: "Homeowner, Butwal", text: "The plants arrived healthy, and the recommendations matched our sunlight and space perfectly." },
-    { name: "Ramesh Thapa", role: "Shop Owner, Murgiya", text: "They suggested low-maintenance plants that made our storefront look more welcoming right away." },
-    { name: "Anita Gurung", role: "Family Garden Customer", text: "The fruit plants and roses were in very good condition, and the guidance felt practical and honest." },
-    { name: "Bikash Sharma", role: "Office Admin, Rupandehi", text: "Our office greenery setup now feels fresh and professional without being hard to maintain." },
+    { name: "Sushma K.C.", role: "Homeowner, Butwal", rating: 5, text: "The plants arrived healthy, and the recommendations matched our sunlight and space perfectly." },
+    { name: "Ramesh Thapa", role: "Shop Owner, Murgiya", rating: 5, text: "They suggested low-maintenance plants that made our storefront look more welcoming right away." },
   ];
 
   const faqs = [

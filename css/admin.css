@@ -320,6 +320,113 @@ th {
   text-align: center;
 }
 
+.admin-feedback-summary {
+  display: grid;
+  justify-items: end;
+  gap: 0.2rem;
+}
+
+.admin-feedback-summary span {
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.admin-feedback-summary strong {
+  font-size: 1.1rem;
+}
+
+.admin-feedback-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 1.2rem;
+}
+
+.admin-feedback-card {
+  display: grid;
+  gap: 1rem;
+  padding: 1.25rem;
+  border-radius: 24px;
+  border: 1px solid var(--line);
+  background: #fff;
+}
+
+.admin-feedback-card.is-pending {
+  border-color: rgba(176, 138, 52, 0.24);
+  background: linear-gradient(180deg, #fffdf6, #fff);
+}
+
+.admin-feedback-card.is-approved {
+  border-color: rgba(47, 106, 63, 0.18);
+  background: linear-gradient(180deg, #f7fbf7, #fff);
+}
+
+.admin-feedback-card__top,
+.admin-feedback-card__meta,
+.admin-feedback-card__rating,
+.admin-feedback-card__actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.9rem;
+}
+
+.admin-feedback-card__top {
+  align-items: flex-start;
+}
+
+.admin-feedback-card__rating {
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.admin-feedback-card__rating strong {
+  font-size: 1rem;
+}
+
+.admin-feedback-card__text {
+  margin: 0;
+}
+
+.admin-feedback-card__actions {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.admin-feedback-card__actions button {
+  width: auto;
+  padding: 0.8rem 1rem;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: #fff;
+}
+
+.admin-feedback-card__actions button.is-danger {
+  color: var(--danger);
+}
+
+.admin-feedback-card__actions button.is-static {
+  color: var(--muted);
+  cursor: default;
+}
+
+.rating-stars {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+}
+
+.rating-stars span {
+  color: #d4ddd0;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.rating-stars span.is-filled {
+  color: #f2b84b;
+}
+
 .admin-modal {
   position: fixed;
   inset: 0;
@@ -390,6 +497,10 @@ th {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .admin-feedback-grid {
+    grid-template-columns: 1fr;
+  }
+
   .admin-security {
     grid-template-columns: 1fr;
   }
@@ -404,6 +515,20 @@ th {
   .admin-panel__head {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .admin-feedback-card__top,
+  .admin-feedback-card__meta {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .admin-feedback-card__rating {
+    align-items: flex-start;
+  }
+
+  .admin-feedback-card__actions {
+    justify-content: flex-start;
   }
 
   .admin-filters,

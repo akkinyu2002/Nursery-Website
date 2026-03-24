@@ -17,6 +17,15 @@ window.NurseryUI = (() => {
     });
   }
 
+  function renderStars(rating) {
+    const value = Math.max(0, Math.min(5, Math.round(Number(rating) || 0)));
+    return `
+      <div class="rating-stars" aria-label="${value} out of 5 stars">
+        ${Array.from({ length: 5 }, (_, index) => `<span class="${index < value ? "is-filled" : ""}">&#9733;</span>`).join("")}
+      </div>
+    `;
+  }
+
   function renderHeader(activePage) {
     const root = document.querySelector("[data-site-header]");
     if (!root) return;
@@ -28,14 +37,13 @@ window.NurseryUI = (() => {
       { key: "services", label: "Services", href: "services.html" },
       { key: "contact", label: "Contact", href: "contact.html" },
       { key: "checkout", label: "Checkout", href: "checkout.html" },
-      { key: "admin", label: "Admin", href: "admin-login.html" },
     ];
 
     root.innerHTML = `
       <header class="site-header">
         <div class="container nav-shell">
           <a class="brand" href="index.html">
-            <img class="brand__logo" src="assets/logo-mark.svg" alt="${window.NurseryData.business.shortName}">
+            <img class="brand__logo" src="${window.NurseryData.business.logo}" alt="${window.NurseryData.business.shortName}" loading="lazy">
             <span class="brand__copy">
               <strong>${window.NurseryData.business.shortName}</strong>
               <small>Healthy plants for home and garden</small>
@@ -94,7 +102,6 @@ window.NurseryUI = (() => {
               <li><a href="services.html">Garden Services</a></li>
               <li><a href="about.html">About the Nursery</a></li>
               <li><a href="contact.html">Contact</a></li>
-              <li><a href="admin-login.html">Admin</a></li>
             </ul>
           </div>
           <div class="footer-group footer-contact">
@@ -247,6 +254,7 @@ window.NurseryUI = (() => {
   return {
     formatCurrency,
     formatDate,
+    renderStars,
     renderHeader,
     renderFooter,
     syncCartCount,

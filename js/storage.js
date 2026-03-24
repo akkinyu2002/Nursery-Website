@@ -5,6 +5,8 @@ window.NurseryStorage = (() => {
     auth: "lumbini-admin-auth",
     lastOrder: "lumbini-last-order",
     adminSettings: "lumbini-admin-settings",
+    feedback: "lumbini-feedback",
+    feedbackSeeded: "lumbini-feedback-seeded",
   };
 
   function read(key, fallback) {
@@ -52,6 +54,107 @@ window.NurseryStorage = (() => {
       usesDefaultPassword: settings.usesDefaultPassword,
       passwordChangedAt: settings.passwordChangedAt,
     };
+  }
+
+  function normalizeFeedbackItem(item) {
+    return {
+      id: item.id || `FB-${Date.now()}`,
+      name: item.name || "Customer",
+      role: item.role || "Nursery customer",
+      rating: Number(item.rating) || 0,
+      text: item.text || "",
+      createdAt: item.createdAt || new Date().toISOString(),
+      approved: Boolean(item.approved),
+    };
+  }
+
+  function initFeedback() {
+    const existing = read(KEYS.feedback, null);
+    const seededAlready = read(KEYS.feedbackSeeded, false);
+    const seeded = (window.NurseryData.testimonials || []).map((item, index) =>
+      normalizeFeedbackItem({
+        id: `FB-SEED-${index + 1}`,
+        ...item,
+        approved: true,
+      })
+    );
+
+    if (Array.isArray(existing) && seededAlready) {
+      return existing.map(normalizeFeedbackItem);
+    }
+
+    if (Array.isArray(existing)) {
+      const normalized = existing.map(normalizeFeedbackItem);
+      const knownIds = new Set(normalized.map((item) => item.id));
+      const merged = normalized.slice();
+
+      seeded.forEach((item) => {
+        if (!knownIds.has(item.id)) {
+          merged.push(item);
+        }
+      });
+
+      write(KEYS.feedbackSeeded, true);
+      return write(KEYS.feedback, merged);
+    }
+
+    write(KEYS.feedbackSeeded, true);
+    return write(KEYS.feedback, seeded);
+  }
+
+  function getFeedback() {
+    return initFeedback();
+  }
+
+  function saveFeedback(items) {
+    return write(KEYS.feedback, items.map(normalizeFeedbackItem));
+  }
+
+  function getApprovedFeedback() {
+    return getFeedback().filter((item) => item.approved);
+  }
+
+  function addFeedback(formData) {
+    const name = String(formData.name || "").trim();
+    const location = String(formData.location || "").trim();
+    const text = String(formData.text || "").trim();
+    const rating = Number(formData.rating);
+
+    if (!name || !text || !rating || rating < 1 || rating > 5) {
+      return {
+        ok: false,
+        message: "Please enter your name, choose a star rating, and add a short review.",
+      };
+    }
+
+    const feedback = getFeedback();
+    const entry = {
+      id: `FB-${Date.now()}`,
+      name,
+      role: location ? `Customer, ${location}` : "Nursery customer",
+      rating,
+      text,
+      createdAt: new Date().toISOString(),
+      approved: false,
+    };
+
+    feedback.unshift(entry);
+    saveFeedback(feedback);
+
+    return {
+      ok: true,
+      message: "Thanks for sharing your feedback. The nursery team can review it before it appears on the website.",
+      entry,
+    };
+  }
+
+  function approveFeedback(feedbackId) {
+    const next = getFeedback().map((item) => (item.id === feedbackId ? { ...item, approved: true } : item));
+    return saveFeedback(next);
+  }
+
+  function deleteFeedback(feedbackId) {
+    return saveFeedback(getFeedback().filter((item) => item.id !== feedbackId));
   }
 
   function getCart() {
@@ -241,7 +344,7 @@ window.NurseryStorage = (() => {
 
     return {
       ok: true,
-      message: "Password updated. The demo password is no longer active.",
+      message: "Password updated successfully.",
     };
   }
 
@@ -269,6 +372,11 @@ window.NurseryStorage = (() => {
     updateOrderStatus,
     archiveOrder,
     deleteOrder,
+    getFeedback,
+    getApprovedFeedback,
+    addFeedback,
+    approveFeedback,
+    deleteFeedback,
     login,
     getAdminPublicState,
     changeAdminPassword,

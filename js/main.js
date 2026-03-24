@@ -21,6 +21,11 @@ function initHomePage() {
   const productsRoot = document.querySelector("[data-home-products]");
   const servicesRoot = document.querySelector("[data-home-services]");
   const testimonialRoot = document.querySelector("[data-home-testimonials]");
+  const feedbackSummary = document.querySelector("[data-feedback-summary]");
+  const feedbackAverage = document.querySelector("[data-feedback-average]");
+  const feedbackCount = document.querySelector("[data-feedback-count]");
+  const feedbackForm = document.querySelector("[data-feedback-form]");
+  const feedbackNote = document.querySelector("[data-feedback-note]");
   const faqRoot = document.querySelector("[data-home-faq]");
 
   if (categoriesRoot) {
@@ -52,20 +57,91 @@ function initHomePage() {
       .join("");
   }
 
-  if (testimonialRoot) {
-    testimonialRoot.innerHTML = window.NurseryData.testimonials
-      .map(
-        (item) => `
-          <article class="testimonial-card reveal">
-            <p>${item.text}</p>
-            <div>
-              <strong>${item.name}</strong>
-              <span>${item.role}</span>
-            </div>
-          </article>
-        `
-      )
-      .join("");
+  function getReviewItems() {
+    return window.NurseryStorage.getApprovedFeedback();
+  }
+
+  function renderTestimonials() {
+    const items = getReviewItems();
+    const average = items.length
+      ? (items.reduce((sum, item) => sum + (Number(item.rating) || 0), 0) / items.length).toFixed(1)
+      : "0.0";
+
+    if (testimonialRoot) {
+      testimonialRoot.innerHTML = items
+        .slice(0, 2)
+        .map(
+          (item) => `
+            <article class="testimonial-card reveal">
+              <div class="testimonial-card__header">
+                ${window.NurseryUI.renderStars(item.rating)}
+                <span class="testimonial-card__rating">${Number(item.rating || 0).toFixed(1)}</span>
+              </div>
+              <p>${item.text}</p>
+              <div class="testimonial-card__meta">
+                <strong>${item.name}</strong>
+                <span>${item.role}</span>
+              </div>
+            </article>
+          `
+        )
+        .join("");
+
+      window.NurseryUI.observeReveals(testimonialRoot);
+    }
+
+    if (feedbackSummary && feedbackAverage && feedbackCount) {
+      feedbackAverage.textContent = average;
+      feedbackCount.textContent = String(items.length);
+    }
+  }
+
+  renderTestimonials();
+
+  if (feedbackForm && feedbackNote) {
+    const ratingInput = feedbackForm.querySelector('[name="rating"]');
+    const starButtons = Array.from(feedbackForm.querySelectorAll("[data-rating-value]"));
+
+    function syncStars() {
+      const activeRating = Number(ratingInput.value || 0);
+      starButtons.forEach((button) => {
+        const value = Number(button.dataset.ratingValue);
+        const active = value <= activeRating;
+        button.classList.toggle("is-active", active);
+        button.setAttribute("aria-pressed", active ? "true" : "false");
+      });
+    }
+
+    feedbackForm.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-rating-value]");
+      if (!button) return;
+      ratingInput.value = button.dataset.ratingValue;
+      syncStars();
+    });
+
+    feedbackForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const formData = new FormData(feedbackForm);
+      const result = window.NurseryStorage.addFeedback({
+        name: formData.get("name"),
+        location: formData.get("location"),
+        rating: formData.get("rating"),
+        text: formData.get("text"),
+      });
+
+      feedbackNote.textContent = result.message;
+      feedbackNote.classList.toggle("is-error", !result.ok);
+      feedbackNote.classList.toggle("is-success", Boolean(result.ok));
+
+      if (result.ok) {
+        feedbackForm.reset();
+        ratingInput.value = "";
+        syncStars();
+        renderTestimonials();
+      }
+    });
+
+    syncStars();
   }
 
   if (faqRoot) {
@@ -465,7 +541,6 @@ function initCheckoutPage() {
         </div>
         <div class="inline-actions">
           <a class="btn btn--primary" href="shop.html">Continue shopping</a>
-          <a class="btn btn--ghost" href="admin-dashboard.html">View in admin</a>
         </div>
       </div>
     `;

@@ -6,6 +6,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const statsRoot = document.querySelector("[data-admin-stats]");
   const securityRoot = document.querySelector("[data-admin-security]");
+  const feedbackRoot = document.querySelector("[data-feedback-panel]");
   const tableRoot = document.querySelector("[data-orders-table]");
   const modalRoot = document.querySelector("[data-order-modal]");
   const searchInput = document.querySelector("[data-order-search]");
@@ -52,13 +53,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function renderSecurity(message) {
     const adminState = window.NurseryStorage.getAdminPublicState();
-    const statusClass = adminState.usesDefaultPassword ? "is-warning" : "is-success";
-    const statusTitle = adminState.usesDefaultPassword
-      ? "Demo password is still active"
-      : "Custom admin password is active";
-    const statusText = adminState.usesDefaultPassword
-      ? "Replace the demo password now. Once changed, the demo hint disappears from the login page and the old demo password stops working."
-      : "Your admin login now uses a custom password. The original demo password is no longer valid.";
+    const statusClass = adminState.passwordChangedAt ? "is-success" : "is-warning";
+    const statusTitle = adminState.passwordChangedAt
+      ? "Password updated"
+      : "Password update recommended";
+    const statusText = adminState.passwordChangedAt
+      ? "This dashboard is using a private password saved for this browser."
+      : "For better security, update the admin password after first access and keep it private.";
     const changedText = adminState.passwordChangedAt
       ? window.NurseryUI.formatDate(adminState.passwordChangedAt)
       : "Not changed yet";
@@ -98,7 +99,7 @@ document.addEventListener("DOMContentLoaded", () => {
             ${
               message
                 ? message.message
-                : "Use at least 6 characters. After a successful change, the demo password will no longer appear on the login screen."
+                : "Use at least 6 characters and keep the dashboard password private."
             }
           </p>
         </form>
@@ -183,6 +184,63 @@ document.addEventListener("DOMContentLoaded", () => {
       : `<div class="admin-empty"><h3>No orders found</h3><p>Try a different search or status filter.</p></div>`;
   }
 
+  function renderFeedbackPanel() {
+    const feedback = window.NurseryStorage.getFeedback();
+    const pendingCount = feedback.filter((item) => !item.approved).length;
+
+    feedbackRoot.innerHTML = `
+      <div class="admin-panel__head">
+        <div>
+          <h2>Customer Reviews</h2>
+          <p>Approve reviews you want to keep on the website or remove the ones you do not want to publish.</p>
+        </div>
+        <div class="admin-feedback-summary">
+          <span>${pendingCount} pending</span>
+          <strong>${feedback.length} total reviews</strong>
+        </div>
+      </div>
+      ${
+        feedback.length
+          ? `
+            <div class="admin-feedback-grid">
+              ${feedback
+                .map(
+                  (item) => `
+                    <article class="admin-feedback-card ${item.approved ? "is-approved" : "is-pending"}">
+                      <div class="admin-feedback-card__top">
+                        <div>
+                          <p class="eyebrow">${item.approved ? "Live on website" : "Pending review"}</p>
+                          <h3>${item.name}</h3>
+                          <p>${item.role}</p>
+                        </div>
+                        <div class="admin-feedback-card__rating">
+                          ${window.NurseryUI.renderStars(item.rating)}
+                          <strong>${Number(item.rating || 0).toFixed(1)}</strong>
+                        </div>
+                      </div>
+                      <p class="admin-feedback-card__text">${item.text}</p>
+                      <div class="admin-feedback-card__meta">
+                        <span>${window.NurseryUI.formatDate(item.createdAt)}</span>
+                        <div class="admin-feedback-card__actions">
+                          ${
+                            item.approved
+                              ? `<button type="button" class="is-static" disabled>Kept on website</button>`
+                              : `<button type="button" data-feedback-approve="${item.id}">Keep on website</button>`
+                          }
+                          <button type="button" class="is-danger" data-feedback-delete="${item.id}">Delete</button>
+                        </div>
+                      </div>
+                    </article>
+                  `
+                )
+                .join("")}
+            </div>
+          `
+          : `<div class="admin-empty"><h3>No customer reviews yet</h3><p>New feedback submitted from the website will appear here for review.</p></div>`
+      }
+    `;
+  }
+
   function renderModal() {
     const order = window.NurseryStorage.getOrders({ includeArchived: true }).find((item) => item.id === state.modalId);
     if (!order) {
@@ -232,9 +290,25 @@ document.addEventListener("DOMContentLoaded", () => {
   function refresh() {
     renderStats();
     renderSecurity();
+    renderFeedbackPanel();
     renderTable();
     renderModal();
   }
+
+  feedbackRoot.addEventListener("click", (event) => {
+    const approve = event.target.closest("[data-feedback-approve]");
+    const del = event.target.closest("[data-feedback-delete]");
+
+    if (approve) {
+      window.NurseryStorage.approveFeedback(approve.dataset.feedbackApprove);
+      refresh();
+    }
+
+    if (del) {
+      window.NurseryStorage.deleteFeedback(del.dataset.feedbackDelete);
+      refresh();
+    }
+  });
 
   tableRoot.addEventListener("change", (event) => {
     const select = event.target.closest("[data-status-change]");
