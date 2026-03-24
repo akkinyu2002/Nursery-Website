@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Shop Plants | Lumbini Nursery</title>
+    <link rel="stylesheet" href="css/styles.css" />
+  </head>
+  <body data-page="shop">
+    <div data-site-header></div>
+
+    <main>
+      <section class="page-hero page-hero--shop">
+        <div class="container" id="shop-catalog-top">
+          <p class="eyebrow">Shop plants online</p>
+          <h1>Browse healthy plants, pots, and garden essentials.</h1>
+          <p>Filter by category, search by plant name, and sort the catalog to place your order with confidence.</p>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="container">
+          <div class="shop-toolbar">
+            <label class="search-field">
+              <span>Search</span>
+              <input type="search" placeholder="Search by plant, tag, or category" data-shop-search />
+            </label>
+            <label class="sort-field">
+              <span>Sort by</span>
+              <select data-shop-sort>
+                <option value="popularity">Popularity</option>
+                <option value="price-low">Price low to high</option>
+                <option value="price-high">Price high to low</option>
+                <option value="newest">Newest</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="chip-row" data-shop-filters></div>
+
+          <div class="section-head section-head--compact">
+            <div><p class="eyebrow">Available products</p><h2>Shop collection</h2></div>
+            <span class="result-count" data-result-count>0 products</span>
+          </div>
+
+          <div class="shop-sections" data-shop-grid></div>
+        </div>
+      </section>
+    </main>
+
+    <div data-site-footer></div>
+    <button class="scroll-top" type="button" data-scroll-top>Top</button>
+
+    <script src="js/data.js"></script>
+    <script src="js/products.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/main.js"></script>
+  </body>
+</html>
