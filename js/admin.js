@@ -129,7 +129,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     tableRoot.innerHTML = orders.length
       ? `
-        <table>
+        <table class="admin-orders-table">
           <thead>
             <tr>
               <th>Order ID</th>
@@ -169,9 +169,9 @@ document.addEventListener("DOMContentLoaded", () => {
                     <td data-label="Order Date">${window.NurseryUI.formatDate(order.createdAt)}</td>
                     <td data-label="Actions">
                       <div class="table-actions">
-                        <button type="button" data-order-view="${order.id}">View</button>
-                        <button type="button" data-order-archive="${order.id}">${order.archived ? "Archived" : "Archive"}</button>
-                        <button type="button" data-order-delete="${order.id}">Delete</button>
+                        <button class="table-action table-action--view" type="button" data-order-view="${order.id}">View</button>
+                        <button class="table-action table-action--archive" type="button" data-order-archive="${order.id}">${order.archived ? "Archived" : "Archive"}</button>
+                        <button class="table-action table-action--danger" type="button" data-order-delete="${order.id}">Delete</button>
                       </div>
                     </td>
                   </tr>
