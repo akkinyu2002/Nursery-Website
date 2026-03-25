@@ -57,12 +57,12 @@ function initHomePage() {
       .join("");
   }
 
-  function getReviewItems() {
+  async function getReviewItems() {
     return window.NurseryStorage.getApprovedFeedback();
   }
 
-  function renderTestimonials() {
-    const items = getReviewItems();
+  async function renderTestimonials() {
+    const items = await getReviewItems();
     const average = items.length
       ? (items.reduce((sum, item) => sum + (Number(item.rating) || 0), 0) / items.length).toFixed(1)
       : "0.0";
@@ -96,7 +96,9 @@ function initHomePage() {
     }
   }
 
-  renderTestimonials();
+  renderTestimonials().catch(() => {
+    // Keep homepage functional even if the feedback source is unavailable.
+  });
 
   if (feedbackForm && feedbackNote) {
     const ratingInput = feedbackForm.querySelector('[name="rating"]');
@@ -119,10 +121,10 @@ function initHomePage() {
       syncStars();
     });
 
-    feedbackForm.addEventListener("submit", (event) => {
+    feedbackForm.addEventListener("submit", async (event) => {
       event.preventDefault();
       const formData = new FormData(feedbackForm);
-      const result = window.NurseryStorage.addFeedback({
+      const result = await window.NurseryStorage.addFeedback({
         name: formData.get("name"),
         location: formData.get("location"),
         rating: formData.get("rating"),
@@ -137,7 +139,7 @@ function initHomePage() {
         feedbackForm.reset();
         ratingInput.value = "";
         syncStars();
-        renderTestimonials();
+        await renderTestimonials();
       }
     });
 
@@ -620,10 +622,10 @@ function initCheckoutPage() {
   areaSelect.addEventListener("change", renderSummary);
   renderSummary();
 
-  root.querySelector("[data-checkout-form]").addEventListener("submit", (event) => {
+  root.querySelector("[data-checkout-form]").addEventListener("submit", async (event) => {
     event.preventDefault();
     const formData = Object.fromEntries(new FormData(event.currentTarget).entries());
-    window.NurseryStorage.placeOrder(formData);
+    await window.NurseryStorage.placeOrder(formData);
     window.NurseryUI.syncCartCount();
     window.location.href = "checkout.html?success=1";
   });

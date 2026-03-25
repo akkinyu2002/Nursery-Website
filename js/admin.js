@@ -1,5 +1,7 @@
-document.addEventListener("DOMContentLoaded", () => {
-  if (!window.NurseryStorage.isAdminLoggedIn()) {
+document.addEventListener("DOMContentLoaded", async () => {
+  const hasSession = window.NurseryStorage.isAdminLoggedIn() || (await window.NurseryStorage.ensureAdminSession());
+
+  if (!hasSession) {
     window.location.href = "admin-login.html";
     return;
   }
@@ -7,36 +9,44 @@ document.addEventListener("DOMContentLoaded", () => {
   const statsRoot = document.querySelector("[data-admin-stats]");
   const securityRoot = document.querySelector("[data-admin-security]");
   const feedbackRoot = document.querySelector("[data-feedback-panel]");
+  const customersRoot = document.querySelector("[data-customers-panel]");
   const tableRoot = document.querySelector("[data-orders-table]");
   const modalRoot = document.querySelector("[data-order-modal]");
   const searchInput = document.querySelector("[data-order-search]");
   const filterSelect = document.querySelector("[data-order-filter]");
   const logoutButton = document.querySelector("[data-admin-logout]");
 
-  const state = { search: "", status: "all", modalId: null };
+  const state = {
+    search: "",
+    status: "all",
+    modalId: null,
+    orders: [],
+    feedback: [],
+    customers: [],
+    securityMessage: null,
+  };
 
   function currentOrders() {
-    return window.NurseryStorage
-      .getOrders({ includeArchived: true })
-      .filter((order) => {
-        const search = state.search.trim().toLowerCase();
-        const text = [order.id, order.customerName, order.phone, order.address].join(" ").toLowerCase();
-        const searchMatch = !search || text.includes(search);
-        const statusMatch =
-          state.status === "all" ||
-          (state.status === "archived" ? order.archived : order.status.toLowerCase() === state.status);
-        return searchMatch && statusMatch;
-      });
+    return state.orders.filter((order) => {
+      const search = state.search.trim().toLowerCase();
+      const text = [order.id, order.customerName, order.phone, order.address].join(" ").toLowerCase();
+      const searchMatch = !search || text.includes(search);
+      const statusMatch =
+        state.status === "all" ||
+        (state.status === "archived" ? order.archived : order.status.toLowerCase() === state.status);
+      return searchMatch && statusMatch;
+    });
   }
 
   function renderStats() {
-    const orders = window.NurseryStorage.getOrders({ includeArchived: true });
+    if (!statsRoot) return;
+
     const cards = [
-      { label: "Total Orders", value: orders.filter((order) => !order.archived).length },
-      { label: "Pending Orders", value: orders.filter((order) => order.status === "Pending" && !order.archived).length },
-      { label: "Confirmed Orders", value: orders.filter((order) => order.status === "Confirmed" && !order.archived).length },
-      { label: "Delivered Orders", value: orders.filter((order) => order.status === "Delivered" && !order.archived).length },
-      { label: "Cancelled Orders", value: orders.filter((order) => order.status === "Cancelled" && !order.archived).length },
+      { label: "Total Orders", value: state.orders.filter((order) => !order.archived).length },
+      { label: "Pending Orders", value: state.orders.filter((order) => order.status === "Pending" && !order.archived).length },
+      { label: "Confirmed Orders", value: state.orders.filter((order) => order.status === "Confirmed" && !order.archived).length },
+      { label: "Delivered Orders", value: state.orders.filter((order) => order.status === "Delivered" && !order.archived).length },
+      { label: "Cancelled Orders", value: state.orders.filter((order) => order.status === "Cancelled" && !order.archived).length },
     ];
 
     statsRoot.innerHTML = cards
@@ -52,11 +62,40 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function renderSecurity(message) {
+    if (!securityRoot) return;
+
+    const authMode = window.NurseryStorage.getAuthMode();
+    const persistence = window.NurseryStorage.getPersistenceStatus();
+
+    if (authMode === "supabase") {
+      securityRoot.innerHTML = `
+        <div class="admin-panel__head">
+          <div>
+            <h2>Admin Security</h2>
+            <p>Authentication is managed by Supabase Auth in this mode.</p>
+          </div>
+        </div>
+        <div class="admin-security">
+          <article class="admin-security__status is-success">
+            <p class="eyebrow">Current access state</p>
+            <h3>Supabase Auth enabled</h3>
+            <p>Use your Supabase admin email and password to sign in. Password reset and account controls are managed in Supabase.</p>
+            <div class="admin-security__meta">
+              <div><span>Auth provider</span><strong>Supabase</strong></div>
+              <div><span>Data mode</span><strong>${persistence.provider}</strong></div>
+            </div>
+          </article>
+          <div class="admin-security__form">
+            <p class="admin-security__note is-info">${message ? message.message : "Password changes are handled in your Supabase dashboard."}</p>
+          </div>
+        </div>
+      `;
+      return;
+    }
+
     const adminState = window.NurseryStorage.getAdminPublicState();
     const statusClass = adminState.passwordChangedAt ? "is-success" : "is-warning";
-    const statusTitle = adminState.passwordChangedAt
-      ? "Password updated"
-      : "Password update recommended";
+    const statusTitle = adminState.passwordChangedAt ? "Password updated" : "Password update recommended";
     const statusText = adminState.passwordChangedAt
       ? "This dashboard is using a private password saved for this browser."
       : "For better security, update the admin password after first access and keep it private.";
@@ -68,7 +107,7 @@ document.addEventListener("DOMContentLoaded", () => {
       <div class="admin-panel__head">
         <div>
           <h2>Admin Security</h2>
-          <p>Change the admin password directly from the dashboard.</p>
+          <p>Change the local admin password directly from the dashboard.</p>
         </div>
       </div>
       <div class="admin-security">
@@ -120,11 +159,13 @@ document.addEventListener("DOMContentLoaded", () => {
         form.reset();
       }
 
+      state.securityMessage = result;
       renderSecurity(result);
     });
   }
 
   function renderTable() {
+    if (!tableRoot) return;
     const orders = currentOrders();
 
     tableRoot.innerHTML = orders.length
@@ -185,7 +226,9 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function renderFeedbackPanel() {
-    const feedback = window.NurseryStorage.getFeedback();
+    if (!feedbackRoot) return;
+
+    const feedback = state.feedback;
     const pendingCount = feedback.filter((item) => !item.approved).length;
 
     feedbackRoot.innerHTML = `
@@ -241,8 +284,68 @@ document.addEventListener("DOMContentLoaded", () => {
     `;
   }
 
+  function renderCustomersPanel() {
+    if (!customersRoot) return;
+
+    const customers = state.customers;
+    const repeatCustomers = customers.filter((item) => Number(item.totalOrders) > 1).length;
+
+    customersRoot.innerHTML = `
+      <div class="admin-panel__head">
+        <div>
+          <h2>Customers</h2>
+          <p>Checkout customer details and order history summary from Supabase or local fallback data.</p>
+        </div>
+        <div class="admin-feedback-summary">
+          <span>${repeatCustomers} repeat customers</span>
+          <strong>${customers.length} total customers</strong>
+        </div>
+      </div>
+      ${
+        customers.length
+          ? `
+            <div class="admin-table-wrap">
+              <table class="admin-orders-table">
+                <thead>
+                  <tr>
+                    <th>Customer</th>
+                    <th>Phone</th>
+                    <th>Address</th>
+                    <th>Orders</th>
+                    <th>Lifetime Value</th>
+                    <th>Last Order ID</th>
+                    <th>Last Order Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${customers
+                    .map(
+                      (customer) => `
+                        <tr>
+                          <td data-label="Customer">${customer.fullName || "-"}</td>
+                          <td data-label="Phone">${customer.phone || "-"}</td>
+                          <td data-label="Address">${customer.address || "-"}</td>
+                          <td data-label="Orders">${customer.totalOrders}</td>
+                          <td data-label="Lifetime Value">${window.NurseryUI.formatCurrency(customer.lifetimeValue)}</td>
+                          <td data-label="Last Order ID">${customer.lastOrderId || "-"}</td>
+                          <td data-label="Last Order Date">${window.NurseryUI.formatDate(customer.lastOrderAt)}</td>
+                        </tr>
+                      `
+                    )
+                    .join("")}
+                </tbody>
+              </table>
+            </div>
+          `
+          : `<div class="admin-empty"><h3>No customers recorded yet</h3><p>Customer records will appear after checkout submissions.</p></div>`
+      }
+    `;
+  }
+
   function renderModal() {
-    const order = window.NurseryStorage.getOrders({ includeArchived: true }).find((item) => item.id === state.modalId);
+    if (!modalRoot) return;
+
+    const order = state.orders.find((item) => item.id === state.modalId);
     if (!order) {
       modalRoot.classList.remove("is-open");
       modalRoot.innerHTML = "";
@@ -287,83 +390,112 @@ document.addEventListener("DOMContentLoaded", () => {
     `;
   }
 
-  function refresh() {
+  async function loadData() {
+    const [orders, feedback, customers] = await Promise.all([
+      window.NurseryStorage.getOrders({ includeArchived: true }),
+      window.NurseryStorage.getFeedback(),
+      window.NurseryStorage.getCustomers(),
+    ]);
+
+    state.orders = orders;
+    state.feedback = feedback;
+    state.customers = customers;
+  }
+
+  async function refresh(options = {}) {
+    if (options.load !== false) {
+      await loadData();
+    }
+
     renderStats();
-    renderSecurity();
+    renderSecurity(state.securityMessage);
     renderFeedbackPanel();
+    renderCustomersPanel();
     renderTable();
     renderModal();
   }
 
-  feedbackRoot.addEventListener("click", (event) => {
-    const approve = event.target.closest("[data-feedback-approve]");
-    const del = event.target.closest("[data-feedback-delete]");
+  if (feedbackRoot) {
+    feedbackRoot.addEventListener("click", async (event) => {
+      const approve = event.target.closest("[data-feedback-approve]");
+      const del = event.target.closest("[data-feedback-delete]");
 
-    if (approve) {
-      window.NurseryStorage.approveFeedback(approve.dataset.feedbackApprove);
-      refresh();
-    }
-
-    if (del) {
-      window.NurseryStorage.deleteFeedback(del.dataset.feedbackDelete);
-      refresh();
-    }
-  });
-
-  tableRoot.addEventListener("change", (event) => {
-    const select = event.target.closest("[data-status-change]");
-    if (!select) return;
-    window.NurseryStorage.updateOrderStatus(select.dataset.statusChange, select.value);
-    refresh();
-  });
-
-  tableRoot.addEventListener("click", (event) => {
-    const view = event.target.closest("[data-order-view]");
-    const archive = event.target.closest("[data-order-archive]");
-    const del = event.target.closest("[data-order-delete]");
-
-    if (view) {
-      state.modalId = view.dataset.orderView;
-      renderModal();
-      return;
-    }
-
-    if (archive) {
-      window.NurseryStorage.archiveOrder(archive.dataset.orderArchive);
-      refresh();
-      return;
-    }
-
-    if (del) {
-      window.NurseryStorage.deleteOrder(del.dataset.orderDelete);
-      if (state.modalId === del.dataset.orderDelete) {
-        state.modalId = null;
+      if (approve) {
+        await window.NurseryStorage.approveFeedback(approve.dataset.feedbackApprove);
+        await refresh();
       }
-      refresh();
-    }
-  });
 
-  modalRoot.addEventListener("click", (event) => {
-    if (event.target.closest("[data-modal-close]")) {
-      state.modalId = null;
-      renderModal();
-    }
-  });
+      if (del) {
+        await window.NurseryStorage.deleteFeedback(del.dataset.feedbackDelete);
+        await refresh();
+      }
+    });
+  }
 
-  searchInput.addEventListener("input", (event) => {
-    state.search = event.target.value;
-    renderTable();
-  });
+  if (tableRoot) {
+    tableRoot.addEventListener("change", async (event) => {
+      const select = event.target.closest("[data-status-change]");
+      if (!select) return;
+      await window.NurseryStorage.updateOrderStatus(select.dataset.statusChange, select.value);
+      await refresh();
+    });
 
-  filterSelect.addEventListener("change", (event) => {
-    state.status = event.target.value;
-    renderTable();
-  });
+    tableRoot.addEventListener("click", async (event) => {
+      const view = event.target.closest("[data-order-view]");
+      const archive = event.target.closest("[data-order-archive]");
+      const del = event.target.closest("[data-order-delete]");
 
-  logoutButton.addEventListener("click", () => {
-    window.NurseryStorage.logout();
-    window.location.href = "admin-login.html";
-  });
+      if (view) {
+        state.modalId = view.dataset.orderView;
+        renderModal();
+        return;
+      }
 
-  refresh();
+      if (archive) {
+        await window.NurseryStorage.archiveOrder(archive.dataset.orderArchive);
+        await refresh();
+        return;
+      }
+
+      if (del) {
+        await window.NurseryStorage.deleteOrder(del.dataset.orderDelete);
+        if (state.modalId === del.dataset.orderDelete) {
+          state.modalId = null;
+        }
+        await refresh();
+      }
+    });
+  }
+
+  if (modalRoot) {
+    modalRoot.addEventListener("click", (event) => {
+      if (event.target.closest("[data-modal-close]")) {
+        state.modalId = null;
+        renderModal();
+      }
+    });
+  }
+
+  if (searchInput) {
+    searchInput.addEventListener("input", (event) => {
+      state.search = event.target.value;
+      renderTable();
+    });
+  }
+
+  if (filterSelect) {
+    filterSelect.addEventListener("change", (event) => {
+      state.status = event.target.value;
+      renderTable();
+    });
+  }
+
+  if (logoutButton) {
+    logoutButton.addEventListener("click", async () => {
+      await window.NurseryStorage.logout();
+      window.location.href = "admin-login.html";
+    });
+  }
+
+  await refresh();
 });

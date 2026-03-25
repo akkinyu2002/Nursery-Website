@@ -37,9 +37,11 @@
 
         <section class="admin-panel" data-feedback-panel></section>
 
+        <section class="admin-panel" data-customers-panel></section>
+
         <section class="admin-panel">
           <div class="admin-panel__head">
-            <div><h2>Orders Table</h2><p>Placed orders appear here from localStorage on this device.</p></div>
+            <div><h2>Orders Table</h2><p>Placed orders appear here from Supabase (or local fallback).</p></div>
             <div class="admin-filters">
               <input type="search" placeholder="Search orders" data-order-search />
               <select data-order-filter>
@@ -61,6 +63,9 @@
 
     <script src="js/data.js"></script>
     <script src="js/products.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-config.js"></script>
+    <script src="js/supabase-service.js"></script>
     <script src="js/storage.js"></script>
     <script src="js/ui.js"></script>
     <script src="js/admin.js"></script>
