@@ -298,6 +298,7 @@ table select,
 .admin-table-wrap {
   overflow: auto;
   margin-top: 1.2rem;
+  -webkit-overflow-scrolling: touch;
   border: 1px solid rgba(27, 56, 39, 0.1);
   border-radius: 20px;
   background: rgba(255, 255, 255, 0.7);
@@ -305,22 +306,23 @@ table select,
 
 .admin-orders-table {
   width: 100%;
-  min-width: 1380px;
-  table-layout: fixed;
+  min-width: 1240px;
+  table-layout: auto;
   border-collapse: collapse;
 }
 
 .admin-orders-table th,
 .admin-orders-table td {
-  padding: 1rem 0.9rem;
+  padding: 0.9rem 0.85rem;
   text-align: left;
   border-bottom: 1px solid var(--line);
-  vertical-align: top;
+  vertical-align: middle;
+  line-height: 1.42;
   overflow-wrap: anywhere;
 }
 
 .admin-orders-table th {
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--muted);
@@ -329,19 +331,20 @@ table select,
 
 .table-actions {
   flex-direction: row;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  align-items: center;
   justify-content: flex-start;
-  gap: 0.55rem;
+  gap: 0.45rem;
 }
 
 .table-actions .table-action {
   width: auto;
-  min-width: 5.6rem;
-  padding: 0.65rem 0.85rem;
+  min-width: 4.9rem;
+  padding: 0.55rem 0.72rem;
   border-radius: 12px;
   border: 1px solid var(--line);
   background: #fff;
-  font-size: 0.92rem;
+  font-size: 0.86rem;
   white-space: nowrap;
 }
 
@@ -354,9 +357,10 @@ table select,
 }
 
 .admin-orders-table select {
-  min-width: 9rem;
-  width: 100%;
-  padding: 0.65rem 0.75rem;
+  min-width: 7.6rem;
+  width: auto;
+  max-width: 9.6rem;
+  padding: 0.55rem 0.7rem;
   border-radius: 12px;
   line-height: 1.2;
   background: #fff;
@@ -370,54 +374,15 @@ table select,
   background: rgba(236, 245, 233, 0.86);
 }
 
-.admin-orders-table th:nth-child(1),
-.admin-orders-table td:nth-child(1) {
-  width: 8.4rem;
-}
-
-.admin-orders-table th:nth-child(2),
-.admin-orders-table td:nth-child(2) {
-  width: 11rem;
-}
-
-.admin-orders-table th:nth-child(3),
-.admin-orders-table td:nth-child(3) {
-  width: 9.5rem;
-}
-
-.admin-orders-table th:nth-child(4),
-.admin-orders-table td:nth-child(4) {
-  width: 12rem;
-}
-
-.admin-orders-table th:nth-child(5),
-.admin-orders-table td:nth-child(5) {
-  width: 14rem;
-}
-
 .admin-orders-table th:nth-child(6),
-.admin-orders-table td:nth-child(6) {
-  width: 10rem;
-}
-
-.admin-orders-table th:nth-child(7),
-.admin-orders-table td:nth-child(7) {
-  width: 12rem;
-}
-
+.admin-orders-table td:nth-child(6),
 .admin-orders-table th:nth-child(8),
-.admin-orders-table td:nth-child(8) {
-  width: 8.2rem;
-}
-
+.admin-orders-table td:nth-child(8),
 .admin-orders-table th:nth-child(9),
-.admin-orders-table td:nth-child(9) {
-  width: 7.6rem;
-}
-
+.admin-orders-table td:nth-child(9),
 .admin-orders-table th:nth-child(10),
 .admin-orders-table td:nth-child(10) {
-  width: 12rem;
+  white-space: nowrap;
 }
 
 .admin-empty {
@@ -621,6 +586,24 @@ table select,
 }
 
 @media (max-width: 700px) {
+  .eyebrow {
+    margin-bottom: 0.5rem;
+    letter-spacing: 0.14em;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    margin-bottom: 0.6rem;
+    line-height: 1.12;
+  }
+
+  p {
+    margin-bottom: 0.75rem;
+    line-height: 1.5;
+  }
+
   .admin-main {
     padding: 0.9rem;
   }
@@ -685,6 +668,10 @@ table select,
     border-radius: 20px;
   }
 
+  .admin-panel__head p {
+    margin-bottom: 0;
+  }
+
   .admin-stat {
     padding: 1rem;
     border-radius: 18px;
@@ -738,59 +725,11 @@ table select,
   }
 
   .admin-orders-table {
-    min-width: 0;
-  }
-
-  .admin-orders-table thead {
-    display: none;
-  }
-
-  .admin-orders-table tbody,
-  .admin-orders-table tr,
-  .admin-orders-table td {
-    display: block;
-    width: 100%;
-  }
-
-  .admin-orders-table tr {
-    padding: 0.4rem 0.85rem;
-    margin-bottom: 0.85rem;
-    background: #fff;
-    border: 1px solid var(--line);
-    border-radius: 16px;
-  }
-
-  .admin-orders-table td {
-    display: grid;
-    grid-template-columns: minmax(7rem, 42%) 1fr;
-    gap: 0.55rem;
-    padding: 0.5rem 0;
-    border-bottom: 1px dashed rgba(27, 56, 39, 0.14);
-    overflow-wrap: anywhere;
-  }
-
-  .admin-orders-table td:last-child {
-    border-bottom: 0;
-  }
-
-  .admin-orders-table td::before {
-    content: attr(data-label);
-    color: var(--muted);
-    font-size: 0.72rem;
-    font-weight: 800;
-    letter-spacing: 0.07em;
-    text-transform: uppercase;
+    min-width: 1120px;
   }
 
   .table-actions {
-    align-items: stretch;
-    gap: 0.45rem;
-  }
-
-  .table-actions .table-action {
-    width: 100%;
-    min-width: 0;
-    border-radius: 12px;
+    flex-wrap: nowrap;
   }
 }
 
@@ -814,12 +753,7 @@ table select,
     border-radius: 14px;
   }
 
-  .admin-orders-table td {
-    grid-template-columns: 1fr;
-    gap: 0.3rem;
-  }
-
-  .admin-orders-table td::before {
-    font-size: 0.68rem;
+  .admin-orders-table {
+    min-width: 980px;
   }
 }
