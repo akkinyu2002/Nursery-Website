@@ -324,10 +324,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (view) {
       state.modalId = view.dataset.orderView;
+      renderModal();
+      return;
     }
 
     if (archive) {
       window.NurseryStorage.archiveOrder(archive.dataset.orderArchive);
+      refresh();
+      return;
     }
 
     if (del) {
@@ -335,9 +339,8 @@ document.addEventListener("DOMContentLoaded", () => {
       if (state.modalId === del.dataset.orderDelete) {
         state.modalId = null;
       }
+      refresh();
     }
-
-    refresh();
   });
 
   modalRoot.addEventListener("click", (event) => {
