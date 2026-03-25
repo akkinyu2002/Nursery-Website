@@ -622,12 +622,43 @@ function initCheckoutPage() {
   areaSelect.addEventListener("change", renderSummary);
   renderSummary();
 
-  root.querySelector("[data-checkout-form]").addEventListener("submit", async (event) => {
+  const checkoutForm = root.querySelector("[data-checkout-form]");
+  const submitButton = checkoutForm.querySelector('button[type="submit"]');
+  const submitDefaultLabel = submitButton ? submitButton.textContent : "Place order";
+  let isSubmitting = false;
+
+  checkoutForm.addEventListener("submit", async (event) => {
     event.preventDefault();
-    const formData = Object.fromEntries(new FormData(event.currentTarget).entries());
-    await window.NurseryStorage.placeOrder(formData);
-    window.NurseryUI.syncCartCount();
-    window.location.href = "checkout.html?success=1";
+    if (isSubmitting) return;
+
+    isSubmitting = true;
+    if (submitButton) {
+      submitButton.disabled = true;
+      submitButton.textContent = "Placing order...";
+    }
+
+    try {
+      const formData = Object.fromEntries(new FormData(event.currentTarget).entries());
+      const result = await window.NurseryStorage.placeOrder(formData);
+
+      if (!result || !result.ok) {
+        window.NurseryUI.showToast(
+          (result && result.message) || "Unable to place order. Please try again."
+        );
+        return;
+      }
+
+      window.NurseryUI.syncCartCount();
+      window.location.href = "checkout.html?success=1";
+    } catch (error) {
+      window.NurseryUI.showToast("Unable to place order right now. Please try again.");
+    } finally {
+      isSubmitting = false;
+      if (submitButton) {
+        submitButton.disabled = false;
+        submitButton.textContent = submitDefaultLabel;
+      }
+    }
   });
 }
 

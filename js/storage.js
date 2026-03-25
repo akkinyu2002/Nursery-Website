@@ -90,7 +90,20 @@ window.NurseryStorage = (() => {
     };
   }
 
+  function isMeaningfulOrder(order) {
+    const normalized = normalizeOrder(order);
+    return normalized.items.length > 0 || normalized.subtotal > 0;
+  }
+
   function normalizeCustomer(customer) {
+    const lifetimeValue = Number(customer.lifetimeValue) || 0;
+    const deliveryValueRaw = Number(customer.deliveryValue);
+    const subtotalValueRaw = Number(customer.subtotalValue);
+    const deliveryValue = Number.isFinite(deliveryValueRaw) ? deliveryValueRaw : 0;
+    const subtotalValue = Number.isFinite(subtotalValueRaw)
+      ? subtotalValueRaw
+      : Math.max(0, lifetimeValue - deliveryValue);
+
     return {
       id: customer.id || `CUS-${Date.now()}`,
       fullName: customer.fullName || "",
@@ -98,7 +111,9 @@ window.NurseryStorage = (() => {
       address: customer.address || "",
       deliveryArea: customer.deliveryArea || "",
       totalOrders: Math.max(1, Number(customer.totalOrders) || 1),
-      lifetimeValue: Number(customer.lifetimeValue) || 0,
+      subtotalValue,
+      deliveryValue,
+      lifetimeValue,
       lastOrderId: customer.lastOrderId || "",
       lastOrderAt: customer.lastOrderAt || new Date().toISOString(),
       createdAt: customer.createdAt || new Date().toISOString(),
@@ -178,6 +193,8 @@ window.NurseryStorage = (() => {
       address: row.address,
       deliveryArea: row.delivery_area,
       totalOrders: row.total_orders,
+      subtotalValue: row.subtotal_value,
+      deliveryValue: row.delivery_value,
       lifetimeValue: row.lifetime_value,
       lastOrderId: row.last_order_id,
       lastOrderAt: row.last_order_at,
@@ -193,7 +210,7 @@ window.NurseryStorage = (() => {
   }
 
   function getLocalOrders(options) {
-    const orders = initOrders().map(normalizeOrder);
+    const orders = initOrders().map(normalizeOrder).filter(isMeaningfulOrder);
     if (options && options.includeArchived) return orders;
     return orders.filter((order) => !order.archived);
   }
@@ -257,6 +274,10 @@ window.NurseryStorage = (() => {
 
     orders.forEach((order) => {
       const normalizedOrder = normalizeOrder(order);
+      const hasBillableItems = normalizedOrder.items.length > 0 || normalizedOrder.subtotal > 0;
+      if (!hasBillableItems) {
+        return;
+      }
       const phoneKey = String(normalizedOrder.phone || "").trim().toLowerCase() || `order-${normalizedOrder.id}`;
       const existing = byPhone.get(phoneKey);
 
@@ -270,6 +291,8 @@ window.NurseryStorage = (() => {
             address: normalizedOrder.address,
             deliveryArea: normalizedOrder.deliveryArea,
             totalOrders: 1,
+            subtotalValue: normalizedOrder.subtotal,
+            deliveryValue: normalizedOrder.deliveryFee,
             lifetimeValue: normalizedOrder.total,
             lastOrderId: normalizedOrder.id,
             lastOrderAt: normalizedOrder.createdAt,
@@ -293,6 +316,8 @@ window.NurseryStorage = (() => {
           address: normalizedOrder.address || existing.address,
           deliveryArea: normalizedOrder.deliveryArea || existing.deliveryArea,
           totalOrders: existing.totalOrders + 1,
+          subtotalValue: existing.subtotalValue + normalizedOrder.subtotal,
+          deliveryValue: existing.deliveryValue + normalizedOrder.deliveryFee,
           lifetimeValue: existing.lifetimeValue + normalizedOrder.total,
           lastOrderId:
             new Date(normalizedOrder.createdAt).getTime() > new Date(existing.lastOrderAt).getTime()
@@ -332,6 +357,8 @@ window.NurseryStorage = (() => {
           address: useCurrentAsLatest ? customer.address || existing.address : existing.address,
           deliveryArea: useCurrentAsLatest ? customer.deliveryArea || existing.deliveryArea : existing.deliveryArea,
           totalOrders: existing.totalOrders + customer.totalOrders,
+          subtotalValue: existing.subtotalValue + customer.subtotalValue,
+          deliveryValue: existing.deliveryValue + customer.deliveryValue,
           lifetimeValue: existing.lifetimeValue + customer.lifetimeValue,
           lastOrderId: useCurrentAsLatest ? customer.lastOrderId : existing.lastOrderId,
           lastOrderAt: useCurrentAsLatest ? customer.lastOrderAt : existing.lastOrderAt,
@@ -352,7 +379,7 @@ window.NurseryStorage = (() => {
     const { data, error } = await table.select("*").order("created_at", { ascending: false });
     if (error) throw error;
 
-    const orders = (data || []).map(rowToOrder);
+    const orders = (data || []).map(rowToOrder).filter(isMeaningfulOrder);
     if (options && options.includeArchived) return orders;
     return orders.filter((order) => !order.archived);
   }
@@ -598,6 +625,13 @@ window.NurseryStorage = (() => {
 
   async function placeOrder(formData) {
     const cart = getCart();
+    if (!cart.length) {
+      return {
+        ok: false,
+        message: "Your cart is empty. Please add items before placing the order.",
+      };
+    }
+
     const area = window.NurseryData.deliveryAreas.find((item) => item.value === formData.deliveryArea) || window.NurseryData.deliveryAreas[0];
     const subtotal = getCartSubtotal();
     const deliveryFee = area.fee;
@@ -641,7 +675,7 @@ window.NurseryStorage = (() => {
 
     write(KEYS.lastOrder, order);
     clearCart();
-    return order;
+    return { ok: true, order };
   }
 
   function getLastOrder() {
@@ -805,9 +839,6 @@ window.NurseryStorage = (() => {
     }
 
     try {
-      const customers = await getRemoteCustomers();
-      if (customers.length) return consolidateCustomers(customers);
-
       const remoteOrders = await getRemoteOrders({ includeArchived: true });
       return deriveCustomersFromOrders(remoteOrders);
     } catch (error) {

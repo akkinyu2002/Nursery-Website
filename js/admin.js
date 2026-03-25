@@ -294,7 +294,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       <div class="admin-panel__head">
         <div>
           <h2>Customers</h2>
-          <p>Checkout customer details and order history summary from Supabase or local fallback data.</p>
+          <p>Charges are consolidated by customer, including item total, delivery total, and grand total.</p>
         </div>
         <div class="admin-feedback-summary">
           <span>${repeatCustomers} repeat customers</span>
@@ -312,7 +312,9 @@ document.addEventListener("DOMContentLoaded", async () => {
                     <th>Phone</th>
                     <th>Address</th>
                     <th>Orders</th>
-                    <th>Lifetime Value</th>
+                    <th>Items Total</th>
+                    <th>Delivery Total</th>
+                    <th>Grand Total</th>
                     <th>Last Order ID</th>
                     <th>Last Order Date</th>
                   </tr>
@@ -326,7 +328,9 @@ document.addEventListener("DOMContentLoaded", async () => {
                           <td data-label="Phone">${customer.phone || "-"}</td>
                           <td data-label="Address">${customer.address || "-"}</td>
                           <td data-label="Orders">${customer.totalOrders}</td>
-                          <td data-label="Lifetime Value">${window.NurseryUI.formatCurrency(customer.lifetimeValue)}</td>
+                          <td data-label="Items Total">${window.NurseryUI.formatCurrency(customer.subtotalValue || 0)}</td>
+                          <td data-label="Delivery Total">${window.NurseryUI.formatCurrency(customer.deliveryValue || 0)}</td>
+                          <td data-label="Grand Total">${window.NurseryUI.formatCurrency(customer.lifetimeValue)}</td>
                           <td data-label="Last Order ID">${customer.lastOrderId || "-"}</td>
                           <td data-label="Last Order Date">${window.NurseryUI.formatDate(customer.lastOrderAt)}</td>
                         </tr>
