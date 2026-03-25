@@ -184,6 +184,7 @@ table select,
 
 .admin-main {
   padding: 2rem;
+  min-width: 0;
 }
 
 .admin-topbar,
@@ -195,6 +196,10 @@ table select,
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
+}
+
+.admin-panel__head {
+  align-items: flex-start;
 }
 
 .admin-stats {
@@ -597,6 +602,111 @@ table select,
   }
 }
 
+@media (max-width: 900px) {
+  .admin-table-wrap {
+    overflow: visible;
+    margin-top: 1rem;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+  }
+
+  .admin-orders-table {
+    width: 100%;
+    min-width: 0;
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+
+  .admin-orders-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .admin-orders-table tbody {
+    display: grid;
+    gap: 0.85rem;
+  }
+
+  .admin-orders-table tbody tr {
+    display: grid;
+    gap: 0.6rem;
+    padding: 0.95rem;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 10px 24px rgba(23, 45, 32, 0.09);
+  }
+
+  .admin-orders-table tbody tr:nth-child(even),
+  .admin-orders-table tbody tr:hover {
+    background: rgba(255, 255, 255, 0.9);
+  }
+
+  .admin-orders-table td {
+    display: grid;
+    grid-template-columns: minmax(7rem, 38%) 1fr;
+    gap: 0.6rem;
+    align-items: start;
+    padding: 0;
+    border: 0;
+    line-height: 1.38;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .admin-orders-table td::before {
+    content: attr(data-label);
+    margin-top: 0.08rem;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .admin-orders-table td[data-label="Order ID"] {
+    font-weight: 700;
+  }
+
+  .admin-orders-table td[data-label="Order Status"] select {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+  }
+
+  .admin-orders-table td[data-label="Actions"] .table-actions {
+    width: 100%;
+    gap: 0.45rem;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .admin-orders-table td[data-label="Actions"] .table-action {
+    flex: 1 1 6.5rem;
+    min-width: 6.5rem;
+  }
+
+  .admin-orders-table td:nth-child(4),
+  .admin-orders-table td:nth-child(5) {
+    min-width: 0;
+  }
+
+  .admin-orders-table td:nth-child(6),
+  .admin-orders-table td:nth-child(8),
+  .admin-orders-table td:nth-child(9),
+  .admin-orders-table td:nth-child(10) {
+    white-space: normal;
+  }
+}
+
 @media (max-width: 700px) {
   .eyebrow {
     margin-bottom: 0.5rem;
@@ -626,6 +736,10 @@ table select,
     align-items: stretch;
   }
 
+  .admin-panel__head {
+    gap: 0.75rem;
+  }
+
   .admin-feedback-card__top,
   .admin-feedback-card__meta {
     flex-direction: column;
@@ -638,6 +752,7 @@ table select,
 
   .admin-feedback-card__actions {
     justify-content: flex-start;
+    width: 100%;
   }
 
   .admin-filters,
@@ -673,6 +788,11 @@ table select,
 
   .admin-topbar h1 {
     line-height: 1.12;
+  }
+
+  .admin-feedback-summary {
+    width: 100%;
+    justify-items: start;
   }
 
   .admin-panel {
@@ -736,6 +856,16 @@ table select,
     margin-bottom: 0.3rem;
   }
 
+  .admin-feedback-card__actions button {
+    flex: 1 1 8.5rem;
+  }
+
+  .summary-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.35rem;
+  }
+
   .admin-modal__panel {
     width: 100%;
     padding: 1.1rem;
@@ -744,14 +874,6 @@ table select,
   .admin-modal__close {
     top: 0.75rem;
     right: 0.75rem;
-  }
-
-  .admin-orders-table {
-    min-width: 1120px;
-  }
-
-  .table-actions {
-    flex-wrap: nowrap;
   }
 }
 
@@ -769,13 +891,25 @@ table select,
     grid-template-columns: 1fr;
   }
 
+  .admin-login__card {
+    padding: 1.3rem;
+    border-radius: 22px;
+  }
+
   .admin-detail-list div,
   .admin-items,
   .admin-note {
     border-radius: 14px;
   }
+}
 
-  .admin-orders-table {
-    min-width: 980px;
+@media (max-width: 480px) {
+  .admin-orders-table td {
+    grid-template-columns: 1fr;
+    gap: 0.25rem;
+  }
+
+  .admin-orders-table td::before {
+    margin-top: 0;
   }
 }
