@@ -149,14 +149,14 @@ document.addEventListener("DOMContentLoaded", () => {
               .map(
                 (order) => `
                   <tr>
-                    <td>${order.id}</td>
-                    <td>${order.customerName}</td>
-                    <td>${order.phone}</td>
-                    <td>${order.address}</td>
-                    <td>${order.items.map((item) => `${item.name} x ${item.quantity}`).join(", ")}</td>
-                    <td>${window.NurseryUI.formatCurrency(order.total)}</td>
-                    <td>${order.paymentMethod}</td>
-                    <td>
+                    <td data-label="Order ID">${order.id}</td>
+                    <td data-label="Customer">${order.customerName}</td>
+                    <td data-label="Phone">${order.phone}</td>
+                    <td data-label="Address">${order.address}</td>
+                    <td data-label="Items Ordered">${order.items.map((item) => `${item.name} x ${item.quantity}`).join(", ")}</td>
+                    <td data-label="Total Amount">${window.NurseryUI.formatCurrency(order.total)}</td>
+                    <td data-label="Payment Method">${order.paymentMethod}</td>
+                    <td data-label="Order Status">
                       <select data-status-change="${order.id}">
                         ${["Pending", "Confirmed", "Processing", "Delivered", "Cancelled"]
                           .map(
@@ -166,8 +166,8 @@ document.addEventListener("DOMContentLoaded", () => {
                           .join("")}
                       </select>
                     </td>
-                    <td>${window.NurseryUI.formatDate(order.createdAt)}</td>
-                    <td>
+                    <td data-label="Order Date">${window.NurseryUI.formatDate(order.createdAt)}</td>
+                    <td data-label="Actions">
                       <div class="table-actions">
                         <button type="button" data-order-view="${order.id}">View</button>
                         <button type="button" data-order-archive="${order.id}">${order.archived ? "Archived" : "Archive"}</button>
