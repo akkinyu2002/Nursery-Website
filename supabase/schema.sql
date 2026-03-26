@@ -3,6 +3,7 @@
 -- 1) orders
 -- 2) feedback
 -- 3) customers
+-- 4) notifications
 
 create extension if not exists pgcrypto;
 
@@ -47,19 +48,33 @@ create table if not exists public.customers (
   updated_at timestamptz not null default now()
 );
 
+create table if not exists public.notifications (
+  id text primary key,
+  type text not null default 'order',
+  title text not null,
+  message text not null,
+  order_id text references public.orders(id) on delete set null,
+  is_read boolean not null default false,
+  created_at timestamptz not null default now()
+);
+
 create index if not exists idx_orders_created_at on public.orders(created_at desc);
 create index if not exists idx_feedback_created_at on public.feedback(created_at desc);
 create index if not exists idx_customers_last_order on public.customers(last_order_at desc);
 create index if not exists idx_customers_phone on public.customers(phone);
+create index if not exists idx_notifications_created_at on public.notifications(created_at desc);
+create index if not exists idx_notifications_is_read on public.notifications(is_read);
 
 grant usage on schema public to anon, authenticated;
 grant select, insert, update, delete on table public.orders to anon, authenticated;
 grant select, insert, update, delete on table public.feedback to anon, authenticated;
 grant select, insert, update, delete on table public.customers to anon, authenticated;
+grant select, insert, update, delete on table public.notifications to anon, authenticated;
 
 alter table public.orders enable row level security;
 alter table public.feedback enable row level security;
 alter table public.customers enable row level security;
+alter table public.notifications enable row level security;
 
 -- Orders: public checkout can insert; admin (authenticated) can read/manage.
 do $$
@@ -187,6 +202,47 @@ begin
     select 1 from pg_policies where schemaname = 'public' and tablename = 'customers' and policyname = 'customers_delete_auth'
   ) then
     create policy customers_delete_auth on public.customers
+      for delete
+      to authenticated
+      using (true);
+  end if;
+end $$;
+
+-- Notifications: checkout can insert order notifications; admin can read/manage.
+do $$
+begin
+  if not exists (
+    select 1 from pg_policies where schemaname = 'public' and tablename = 'notifications' and policyname = 'notifications_insert_public'
+  ) then
+    create policy notifications_insert_public on public.notifications
+      for insert
+      to anon, authenticated
+      with check (true);
+  end if;
+
+  if not exists (
+    select 1 from pg_policies where schemaname = 'public' and tablename = 'notifications' and policyname = 'notifications_select_auth'
+  ) then
+    create policy notifications_select_auth on public.notifications
+      for select
+      to authenticated
+      using (true);
+  end if;
+
+  if not exists (
+    select 1 from pg_policies where schemaname = 'public' and tablename = 'notifications' and policyname = 'notifications_update_auth'
+  ) then
+    create policy notifications_update_auth on public.notifications
+      for update
+      to authenticated
+      using (true)
+      with check (true);
+  end if;
+
+  if not exists (
+    select 1 from pg_policies where schemaname = 'public' and tablename = 'notifications' and policyname = 'notifications_delete_auth'
+  ) then
+    create policy notifications_delete_auth on public.notifications
       for delete
       to authenticated
       using (true);
