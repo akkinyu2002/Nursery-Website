@@ -543,6 +543,25 @@ window.NurseryStorage = (() => {
     if (insertError) throw insertError;
   }
 
+  async function sendRemoteOrderEmailAlert(order) {
+    if (
+      !window.NurserySupabase ||
+      typeof window.NurserySupabase.getClient !== "function"
+    ) {
+      throw new Error("Supabase client is unavailable.");
+    }
+
+    const client = window.NurserySupabase.getClient();
+    if (!client || !client.functions || typeof client.functions.invoke !== "function") {
+      throw new Error("Supabase Edge Functions client is unavailable.");
+    }
+
+    const { error } = await client.functions.invoke("order-email-alert", {
+      body: orderToRow(order),
+    });
+    if (error) throw error;
+  }
+
   async function getRemoteNotifications() {
     const table = supabaseTable("notifications");
     if (!table) throw new Error("Supabase notifications table is unavailable.");
@@ -807,6 +826,12 @@ window.NurseryStorage = (() => {
         } catch (error) {
           console.warn("Failed to save notification to Supabase. Falling back to localStorage:", error);
           saveLocalNotification(orderNotification);
+        }
+
+        try {
+          await sendRemoteOrderEmailAlert(order);
+        } catch (error) {
+          console.warn("Failed to trigger order email alert:", error);
         }
       } catch (error) {
         console.warn("Failed to save order to Supabase. Falling back to localStorage:", error);
