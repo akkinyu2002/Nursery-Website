@@ -7,6 +7,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   const statsRoot = document.querySelector("[data-admin-stats]");
+  const notificationsRoot = document.querySelector("[data-notifications-panel]");
   const securityRoot = document.querySelector("[data-admin-security]");
   const feedbackRoot = document.querySelector("[data-feedback-panel]");
   const customersRoot = document.querySelector("[data-customers-panel]");
@@ -21,9 +22,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     status: "all",
     modalId: null,
     orders: [],
+    notifications: [],
     feedback: [],
     customers: [],
     securityMessage: null,
+    knownNotificationIds: new Set(),
+    notificationsHydrated: false,
   };
 
   function currentOrders() {
@@ -59,6 +63,72 @@ document.addEventListener("DOMContentLoaded", async () => {
         `
       )
       .join("");
+  }
+
+  function syncNotificationTracker(shouldNotify = true) {
+    const nextIds = new Set(state.notifications.map((item) => item.id));
+    if (state.notificationsHydrated && shouldNotify) {
+      const freshUnread = state.notifications.filter((item) => !state.knownNotificationIds.has(item.id) && !item.read);
+      freshUnread.slice(0, 3).forEach((item) => {
+        const descriptor = item.orderId ? `Order ${item.orderId}` : item.title;
+        window.NurseryUI.showToast(`New admin alert: ${descriptor}`);
+      });
+    }
+
+    state.knownNotificationIds = nextIds;
+    state.notificationsHydrated = true;
+  }
+
+  function renderNotificationsPanel() {
+    if (!notificationsRoot) return;
+
+    const notifications = state.notifications;
+    const unreadCount = notifications.filter((item) => !item.read).length;
+
+    notificationsRoot.innerHTML = `
+      <div class="admin-panel__head">
+        <div>
+          <h2>Admin Notifications</h2>
+          <p>New order alerts appear here right after customers submit checkout.</p>
+        </div>
+        <div class="admin-feedback-summary">
+          <span>${unreadCount} unread</span>
+          <strong>${notifications.length} total alerts</strong>
+        </div>
+      </div>
+      ${
+        notifications.length
+          ? `
+            <div class="admin-notification-actions">
+              <button type="button" data-notification-read-all ${unreadCount ? "" : "disabled"}>Mark all as read</button>
+            </div>
+            <div class="admin-notification-list">
+              ${notifications
+                .map(
+                  (item) => `
+                    <article class="admin-notification-card ${item.read ? "is-read" : "is-unread"}">
+                      <div class="admin-notification-card__head">
+                        <div>
+                          <p class="eyebrow">${item.read ? "Read alert" : "New alert"}</p>
+                          <h3>${item.title}</h3>
+                          <p>${item.message}</p>
+                        </div>
+                        <span>${window.NurseryUI.formatDate(item.createdAt)}</span>
+                      </div>
+                      <div class="admin-notification-card__actions">
+                        ${item.orderId ? `<button type="button" data-notification-open-order="${item.orderId}">Open order</button>` : ""}
+                        ${item.read ? "" : `<button type="button" data-notification-read="${item.id}">Mark as read</button>`}
+                        <button type="button" class="is-danger" data-notification-delete="${item.id}">Delete</button>
+                      </div>
+                    </article>
+                  `
+                )
+                .join("")}
+            </div>
+          `
+          : `<div class="admin-empty"><h3>No notifications yet</h3><p>The admin will be alerted here when a new order is placed.</p></div>`
+      }
+    `;
   }
 
   function renderSecurity(message) {
@@ -394,24 +464,28 @@ document.addEventListener("DOMContentLoaded", async () => {
     `;
   }
 
-  async function loadData() {
-    const [orders, feedback, customers] = await Promise.all([
+  async function loadData(options = {}) {
+    const [orders, notifications, feedback, customers] = await Promise.all([
       window.NurseryStorage.getOrders({ includeArchived: true }),
+      window.NurseryStorage.getNotifications(),
       window.NurseryStorage.getFeedback(),
       window.NurseryStorage.getCustomers(),
     ]);
 
     state.orders = orders;
+    state.notifications = notifications;
     state.feedback = feedback;
     state.customers = customers;
+    syncNotificationTracker(options.notify !== false);
   }
 
   async function refresh(options = {}) {
     if (options.load !== false) {
-      await loadData();
+      await loadData({ notify: options.notify });
     }
 
     renderStats();
+    renderNotificationsPanel();
     renderSecurity(state.securityMessage);
     renderFeedbackPanel();
     renderCustomersPanel();
@@ -432,6 +506,38 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (del) {
         await window.NurseryStorage.deleteFeedback(del.dataset.feedbackDelete);
         await refresh();
+      }
+    });
+  }
+
+  if (notificationsRoot) {
+    notificationsRoot.addEventListener("click", async (event) => {
+      const openOrder = event.target.closest("[data-notification-open-order]");
+      const readOne = event.target.closest("[data-notification-read]");
+      const readAll = event.target.closest("[data-notification-read-all]");
+      const del = event.target.closest("[data-notification-delete]");
+
+      if (openOrder) {
+        state.modalId = openOrder.dataset.notificationOpenOrder;
+        renderModal();
+        return;
+      }
+
+      if (readOne) {
+        await window.NurseryStorage.markNotificationRead(readOne.dataset.notificationRead);
+        await refresh({ notify: false });
+        return;
+      }
+
+      if (readAll) {
+        await window.NurseryStorage.markAllNotificationsRead();
+        await refresh({ notify: false });
+        return;
+      }
+
+      if (del) {
+        await window.NurseryStorage.deleteNotification(del.dataset.notificationDelete);
+        await refresh({ notify: false });
       }
     });
   }
@@ -501,5 +607,24 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
-  await refresh();
+  const autoRefresh = window.setInterval(() => {
+    if (document.hidden) return;
+    refresh({ notify: true }).catch(() => {
+      // Keep the dashboard interactive even if a refresh cycle fails.
+    });
+  }, 15000);
+
+  window.addEventListener("beforeunload", () => {
+    window.clearInterval(autoRefresh);
+  });
+
+  window.addEventListener("storage", (event) => {
+    if (event.key === "lumbini-admin-notifications") {
+      refresh({ notify: true }).catch(() => {
+        // Ignore storage sync errors; the next interval refresh will retry.
+      });
+    }
+  });
+
+  await refresh({ notify: false });
 });
