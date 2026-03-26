@@ -1,6 +1,6 @@
 # Supabase Setup
 
-This project now supports Supabase for orders, feedback, and customer records with localStorage fallback.
+This project now supports Supabase for orders, feedback, customer records, and admin notifications with localStorage fallback.
 
 ## 1) Create tables and policies
 
@@ -20,6 +20,7 @@ window.NurserySupabaseConfig = {
     orders: "orders",
     feedback: "feedback",
     customers: "customers",
+    notifications: "notifications",
   },
 };
 ```
@@ -39,6 +40,7 @@ If `url` or `anonKey` is left blank, the app stays in localStorage mode.
 3. Confirm:
    - order appears in Orders table
    - customer appears in Customers panel
+   - notification appears in Admin Notifications panel
    - feedback submissions appear in Customer Reviews panel
 
 ## Notes
