@@ -7,6 +7,7 @@ window.NurseryStorage = (() => {
     adminSettings: "lumbini-admin-settings",
     feedback: "lumbini-feedback",
     feedbackSeeded: "lumbini-feedback-seeded",
+    notifications: "lumbini-admin-notifications",
   };
 
   const ORDER_STATUSES = ["Pending", "Confirmed", "Processing", "Delivered", "Cancelled"];
@@ -121,6 +122,18 @@ window.NurseryStorage = (() => {
     };
   }
 
+  function normalizeNotification(notification) {
+    return {
+      id: notification.id || `NTF-${Date.now()}-${Math.floor(100 + Math.random() * 900)}`,
+      type: notification.type || "order",
+      title: notification.title || "New update",
+      message: notification.message || "",
+      orderId: notification.orderId || "",
+      read: Boolean(notification.read),
+      createdAt: notification.createdAt || new Date().toISOString(),
+    };
+  }
+
   function orderToRow(order) {
     const normalized = normalizeOrder(order);
     return {
@@ -203,6 +216,31 @@ window.NurseryStorage = (() => {
     });
   }
 
+  function notificationToRow(item) {
+    const normalized = normalizeNotification(item);
+    return {
+      id: normalized.id,
+      type: normalized.type,
+      title: normalized.title,
+      message: normalized.message,
+      order_id: normalized.orderId || null,
+      is_read: normalized.read,
+      created_at: normalized.createdAt,
+    };
+  }
+
+  function rowToNotification(row) {
+    return normalizeNotification({
+      id: row.id,
+      type: row.type,
+      title: row.title,
+      message: row.message,
+      orderId: row.order_id,
+      read: row.is_read,
+      createdAt: row.created_at,
+    });
+  }
+
   function initOrders() {
     const existing = read(KEYS.orders, null);
     if (existing) return existing;
@@ -229,6 +267,27 @@ window.NurseryStorage = (() => {
 
   function saveLocalFeedback(items) {
     return write(KEYS.feedback, items.map(normalizeFeedbackItem));
+  }
+
+  function saveLocalNotifications(items) {
+    return write(KEYS.notifications, items.map(normalizeNotification));
+  }
+
+  function getLocalNotifications() {
+    const items = read(KEYS.notifications, []);
+    if (!Array.isArray(items)) {
+      return [];
+    }
+
+    return items
+      .map(normalizeNotification)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }
+
+  function saveLocalNotification(item) {
+    const notifications = getLocalNotifications();
+    notifications.unshift(normalizeNotification(item));
+    return saveLocalNotifications(notifications);
   }
 
   function initFeedback() {
@@ -484,6 +543,48 @@ window.NurseryStorage = (() => {
     if (insertError) throw insertError;
   }
 
+  async function getRemoteNotifications() {
+    const table = supabaseTable("notifications");
+    if (!table) throw new Error("Supabase notifications table is unavailable.");
+
+    const { data, error } = await table.select("*").order("created_at", { ascending: false });
+    if (error) throw error;
+
+    return (data || []).map(rowToNotification);
+  }
+
+  async function insertRemoteNotification(notification) {
+    const table = supabaseTable("notifications");
+    if (!table) throw new Error("Supabase notifications table is unavailable.");
+
+    const { error } = await table.insert(notificationToRow(notification));
+    if (error) throw error;
+  }
+
+  async function markRemoteNotificationRead(notificationId) {
+    const table = supabaseTable("notifications");
+    if (!table) throw new Error("Supabase notifications table is unavailable.");
+
+    const { error } = await table.update({ is_read: true }).eq("id", notificationId);
+    if (error) throw error;
+  }
+
+  async function markAllRemoteNotificationsRead() {
+    const table = supabaseTable("notifications");
+    if (!table) throw new Error("Supabase notifications table is unavailable.");
+
+    const { error } = await table.update({ is_read: true }).eq("is_read", false);
+    if (error) throw error;
+  }
+
+  async function deleteRemoteNotification(notificationId) {
+    const table = supabaseTable("notifications");
+    if (!table) throw new Error("Supabase notifications table is unavailable.");
+
+    const { error } = await table.delete().eq("id", notificationId);
+    if (error) throw error;
+  }
+
   function initAdminSettings() {
     const existing = read(KEYS.adminSettings, null);
     if (existing && existing.username && existing.password) {
@@ -616,11 +717,46 @@ window.NurseryStorage = (() => {
     }
   }
 
+  async function getNotifications() {
+    if (!isSupabaseEnabled()) {
+      return getLocalNotifications();
+    }
+
+    try {
+      const remote = await getRemoteNotifications();
+      if (remote.length) return remote;
+      return getLocalNotifications();
+    } catch (error) {
+      console.warn("Falling back to local notifications:", error);
+      return getLocalNotifications();
+    }
+  }
+
   function generateOrderId() {
     const now = new Date();
     const stamp = `${now.getFullYear().toString().slice(-2)}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}`;
     const random = Math.floor(100 + Math.random() * 900);
     return `LNP-${stamp}${random}`;
+  }
+
+  function generateNotificationId() {
+    return `NTF-${Date.now()}${Math.floor(100 + Math.random() * 900)}`;
+  }
+
+  function createOrderNotification(order) {
+    const normalizedOrder = normalizeOrder(order);
+    const customer = normalizedOrder.customerName || "A customer";
+    const itemCount = normalizedOrder.items.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
+
+    return normalizeNotification({
+      id: generateNotificationId(),
+      type: "order",
+      title: "New order placed",
+      message: `${customer} placed ${normalizedOrder.id} for NPR ${Math.round(normalizedOrder.total)} (${itemCount} item${itemCount === 1 ? "" : "s"}).`,
+      orderId: normalizedOrder.id,
+      read: false,
+      createdAt: normalizedOrder.createdAt,
+    });
   }
 
   async function placeOrder(formData) {
@@ -656,6 +792,7 @@ window.NurseryStorage = (() => {
         price: item.price,
       })),
     });
+    const orderNotification = createOrderNotification(order);
 
     let savedToRemote = false;
 
@@ -664,6 +801,13 @@ window.NurseryStorage = (() => {
         await insertRemoteOrder(order);
         await insertRemoteCustomerSnapshot(order);
         savedToRemote = true;
+
+        try {
+          await insertRemoteNotification(orderNotification);
+        } catch (error) {
+          console.warn("Failed to save notification to Supabase. Falling back to localStorage:", error);
+          saveLocalNotification(orderNotification);
+        }
       } catch (error) {
         console.warn("Failed to save order to Supabase. Falling back to localStorage:", error);
       }
@@ -671,6 +815,7 @@ window.NurseryStorage = (() => {
 
     if (!savedToRemote) {
       saveLocalOrder(order);
+      saveLocalNotification(orderNotification);
     }
 
     write(KEYS.lastOrder, order);
@@ -735,6 +880,56 @@ window.NurseryStorage = (() => {
     } catch (error) {
       console.warn("Failed to delete Supabase order. Falling back to localStorage:", error);
       return saveLocalOrders(initOrders().filter((order) => order.id !== orderId));
+    }
+  }
+
+  async function markNotificationRead(notificationId) {
+    if (!isSupabaseEnabled()) {
+      const next = getLocalNotifications().map((item) =>
+        item.id === notificationId ? { ...item, read: true } : item
+      );
+      return saveLocalNotifications(next);
+    }
+
+    try {
+      await markRemoteNotificationRead(notificationId);
+      return true;
+    } catch (error) {
+      console.warn("Failed to update Supabase notification. Falling back to localStorage:", error);
+      const next = getLocalNotifications().map((item) =>
+        item.id === notificationId ? { ...item, read: true } : item
+      );
+      return saveLocalNotifications(next);
+    }
+  }
+
+  async function markAllNotificationsRead() {
+    if (!isSupabaseEnabled()) {
+      const next = getLocalNotifications().map((item) => ({ ...item, read: true }));
+      return saveLocalNotifications(next);
+    }
+
+    try {
+      await markAllRemoteNotificationsRead();
+      return true;
+    } catch (error) {
+      console.warn("Failed to update Supabase notifications. Falling back to localStorage:", error);
+      const next = getLocalNotifications().map((item) => ({ ...item, read: true }));
+      return saveLocalNotifications(next);
+    }
+  }
+
+  async function deleteNotification(notificationId) {
+    if (!isSupabaseEnabled()) {
+      return saveLocalNotifications(getLocalNotifications().filter((item) => item.id !== notificationId));
+    }
+
+    try {
+      await deleteRemoteNotification(notificationId);
+      return true;
+    } catch (error) {
+      console.warn("Failed to delete Supabase notification. Falling back to localStorage:", error);
+      return saveLocalNotifications(getLocalNotifications().filter((item) => item.id !== notificationId));
     }
   }
 
@@ -972,11 +1167,15 @@ window.NurseryStorage = (() => {
     getCartCount,
     getCartSubtotal,
     getOrders,
+    getNotifications,
     placeOrder,
     getLastOrder,
     updateOrderStatus,
     archiveOrder,
     deleteOrder,
+    markNotificationRead,
+    markAllNotificationsRead,
+    deleteNotification,
     getFeedback,
     getApprovedFeedback,
     addFeedback,
