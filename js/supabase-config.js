@@ -9,5 +9,6 @@ window.NurserySupabaseConfig = {
     orders: "orders",
     feedback: "feedback",
     customers: "customers",
+    notifications: "notifications",
   },
 };

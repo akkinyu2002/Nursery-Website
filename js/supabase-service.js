@@ -6,6 +6,7 @@ window.NurserySupabase = (() => {
     orders: (config.tables && config.tables.orders) || "orders",
     feedback: (config.tables && config.tables.feedback) || "feedback",
     customers: (config.tables && config.tables.customers) || "customers",
+    notifications: (config.tables && config.tables.notifications) || "notifications",
   };
 
   let client = null;
