@@ -498,6 +498,88 @@ table select,
   cursor: default;
 }
 
+.admin-notification-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1rem;
+}
+
+.admin-notification-actions button,
+.admin-notification-card__actions button {
+  width: auto;
+  padding: 0.75rem 1rem;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: #fff;
+}
+
+.admin-notification-list {
+  display: grid;
+  gap: 0.9rem;
+  margin-top: 1rem;
+}
+
+.admin-notification-card {
+  padding: 1rem 1.1rem;
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  background: #fff;
+}
+
+.admin-notification-card.is-unread {
+  border-color: rgba(47, 106, 63, 0.22);
+  background: linear-gradient(180deg, #f5fbf4, #fff);
+}
+
+.admin-notification-card__head,
+.admin-notification-card__actions {
+  display: flex;
+  gap: 0.7rem;
+}
+
+.admin-notification-card__head {
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.admin-notification-card__head p {
+  margin-bottom: 0;
+}
+
+.admin-notification-card__head > span {
+  color: var(--muted);
+  font-size: 0.84rem;
+  white-space: nowrap;
+  padding-top: 0.3rem;
+}
+
+.admin-notification-card__actions {
+  margin-top: 0.9rem;
+  flex-wrap: wrap;
+}
+
+.admin-notification-card__actions button.is-danger {
+  color: var(--danger);
+}
+
+.toast-tray {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 80;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.toast {
+  max-width: min(22rem, calc(100vw - 2rem));
+  padding: 0.9rem 1rem;
+  background: rgba(24, 39, 29, 0.94);
+  color: #fff;
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+}
+
 .rating-stars {
   display: inline-flex;
   align-items: center;
@@ -753,6 +835,24 @@ table select,
   .admin-feedback-card__actions {
     justify-content: flex-start;
     width: 100%;
+  }
+
+  .admin-notification-card__head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .admin-notification-actions {
+    justify-content: flex-start;
+  }
+
+  .admin-notification-card__actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .admin-notification-card__actions button {
+    flex: 1 1 8.5rem;
   }
 
   .admin-filters,
