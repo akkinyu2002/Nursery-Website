@@ -30,9 +30,11 @@ create table if not exists public.feedback (
   role text,
   rating integer not null check (rating >= 1 and rating <= 5),
   text text not null,
-  approved boolean not null default false,
+  approved boolean not null default true,
   created_at timestamptz not null default now()
 );
+
+alter table public.feedback alter column approved set default true;
 
 create table if not exists public.customers (
   id uuid primary key default gen_random_uuid(),
@@ -117,7 +119,7 @@ begin
   end if;
 end $$;
 
--- Feedback: public can insert and view approved reviews; admin can view/manage all.
+-- Feedback: submissions are live by default; admin can still manage all reviews.
 do $$
 begin
   if not exists (
