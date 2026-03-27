@@ -58,7 +58,8 @@ Email recipient is fixed in code to `pradeepsharma.shantipur50@gmail.com`.
    - customer appears in Customers panel
    - notification appears in Admin Notifications panel
    - admin email receives a new order alert
-   - feedback submissions appear in Customer Reviews panel
+   - feedback submissions appear in Customer Reviews panel and are visible on the homepage immediately
+   - admin can delete any review from the Customer Reviews panel if it should not stay live
 
 ## Notes
 
