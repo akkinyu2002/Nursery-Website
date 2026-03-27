@@ -1,9 +1,45 @@
-import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
-
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+type ServeHandler = (req: Request) => Response | Promise<Response>;
+type DenoLike = {
+  env?: {
+    get?: (key: string) => string | undefined;
+  };
+  serve?: (handler: ServeHandler) => void;
+};
+
+function getDenoRuntime(): DenoLike | undefined {
+  return (globalThis as { Deno?: DenoLike }).Deno;
+}
+
+function getEnv(name: string): string | undefined {
+  const denoValue = getDenoRuntime()?.env?.get?.(name);
+  if (typeof denoValue === "string") {
+    return denoValue;
+  }
+
+  const processEnv = (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env;
+  return processEnv?.[name];
+}
+
+function runServer(handler: ServeHandler): void {
+  const denoServe = getDenoRuntime()?.serve;
+  if (typeof denoServe === "function") {
+    denoServe(handler);
+    return;
+  }
+
+  const standardServe = (globalThis as { serve?: (callback: ServeHandler) => void }).serve;
+  if (typeof standardServe === "function") {
+    standardServe(handler);
+    return;
+  }
+
+  throw new Error("No compatible serve implementation found in this runtime.");
+}
 
 function toRecord(value: unknown): Record<string, unknown> {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
@@ -96,7 +132,7 @@ function formatEmailText(order: Record<string, unknown>): string {
   ].join("\n");
 }
 
-serve(async (req) => {
+runServer(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
@@ -108,9 +144,9 @@ serve(async (req) => {
     });
   }
 
-  const resendApiKey = Deno.env.get("RESEND_API_KEY");
+  const resendApiKey = getEnv("RESEND_API_KEY");
   const toEmail = "nyupaneaakash@gmail.com";
-  const fromEmail = Deno.env.get("ORDER_ALERT_FROM_EMAIL") || "Nursery Alerts <onboarding@resend.dev>";
+  const fromEmail = getEnv("ORDER_ALERT_FROM_EMAIL") || "Nursery Alerts <onboarding@resend.dev>";
 
   if (!resendApiKey) {
     return new Response(
