@@ -51,11 +51,11 @@ window.NurseryUI = (() => {
           </a>
           <nav class="nav-links">
             ${links
-              .map(
-                (link) =>
-                  `<a class="${activePage === link.key ? "is-active" : ""}" href="${link.href}">${link.label}</a>`
-              )
-              .join("")}
+        .map(
+          (link) =>
+            `<a class="${activePage === link.key ? "is-active" : ""}" href="${link.href}">${link.label}</a>`
+        )
+        .join("")}
           </nav>
           <div class="nav-actions">
             <a class="nav-phone" href="${window.NurseryData.business.phoneHref}">Call</a>
