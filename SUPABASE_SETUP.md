@@ -47,7 +47,7 @@ This sends a real admin email whenever a new order is placed.
 
 Function source: [`supabase/functions/order-email-alert/index.ts`](./supabase/functions/order-email-alert/index.ts)
 
-Email recipient is fixed in code to `pradeepsharma.shantipur50@gmail.com`.
+Email recipient is fixed in code to `nyupaneaakash@gmail.com`.
 
 ## 5) Verify flow
 
