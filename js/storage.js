@@ -59,7 +59,7 @@ window.NurseryStorage = (() => {
       rating: Number(item.rating) || 0,
       text: item.text || "",
       createdAt: item.createdAt || new Date().toISOString(),
-      approved: Boolean(item.approved),
+      approved: typeof item.approved === "boolean" ? item.approved : true,
     };
   }
 
@@ -975,7 +975,7 @@ window.NurseryStorage = (() => {
 
   async function getApprovedFeedback() {
     const items = await getFeedback();
-    return items.filter((item) => item.approved);
+    return items.filter((item) => item.approved !== false);
   }
 
   async function addFeedback(formData) {
@@ -998,7 +998,7 @@ window.NurseryStorage = (() => {
       rating,
       text,
       createdAt: new Date().toISOString(),
-      approved: false,
+      approved: true,
     });
 
     if (isSupabaseEnabled()) {
@@ -1018,7 +1018,7 @@ window.NurseryStorage = (() => {
 
     return {
       ok: true,
-      message: "Thanks for sharing your feedback. The nursery team can review it before it appears on the website.",
+      message: "Thanks for sharing your feedback. Your review is now live on the website.",
       entry,
     };
   }
