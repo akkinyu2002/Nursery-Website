@@ -109,7 +109,7 @@ serve(async (req) => {
   }
 
   const resendApiKey = Deno.env.get("RESEND_API_KEY");
-  const toEmail = "pradeepsharma.shantipur50@gmail.com";
+  const toEmail = "nyupaneaakash@gmail.com";
   const fromEmail = Deno.env.get("ORDER_ALERT_FROM_EMAIL") || "Nursery Alerts <onboarding@resend.dev>";
 
   if (!resendApiKey) {
