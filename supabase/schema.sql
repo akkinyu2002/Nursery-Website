@@ -79,174 +79,111 @@ alter table public.customers enable row level security;
 alter table public.notifications enable row level security;
 
 -- Orders: public checkout can insert; admin (authenticated) can read/manage.
-do $$
-begin
-  if not exists (
-    select 1 from pg_policies where schemaname = 'public' and tablename = 'orders' and policyname = 'orders_insert_public'
-  ) then
-    create policy orders_insert_public on public.orders
-      for insert
-      to anon, authenticated
-      with check (true);
-  end if;
+drop policy if exists orders_insert_public on public.orders;
+create policy orders_insert_public on public.orders
+  for insert
+  to anon, authenticated
+  with check (true);
 
-  if not exists (
-    select 1 from pg_policies where schemaname = 'public' and tablename = 'orders' and policyname = 'orders_select_auth'
-  ) then
-    create policy orders_select_auth on public.orders
-      for select
-      to authenticated
-      using (true);
-  end if;
+drop policy if exists orders_select_auth on public.orders;
+create policy orders_select_auth on public.orders
+  for select
+  to authenticated
+  using (true);
 
-  if not exists (
-    select 1 from pg_policies where schemaname = 'public' and tablename = 'orders' and policyname = 'orders_update_auth'
-  ) then
-    create policy orders_update_auth on public.orders
-      for update
-      to authenticated
-      using (true)
-      with check (true);
-  end if;
+drop policy if exists orders_update_auth on public.orders;
+create policy orders_update_auth on public.orders
+  for update
+  to authenticated
+  using (true)
+  with check (true);
 
-  if not exists (
-    select 1 from pg_policies where schemaname = 'public' and tablename = 'orders' and policyname = 'orders_delete_auth'
-  ) then
-    create policy orders_delete_auth on public.orders
-      for delete
-      to authenticated
-      using (true);
-  end if;
-end $$;
+drop policy if exists orders_delete_auth on public.orders;
+create policy orders_delete_auth on public.orders
+  for delete
+  to authenticated
+  using (true);
 
 -- Feedback: submissions are live by default; admin can still manage all reviews.
-do $$
-begin
-  if not exists (
-    select 1 from pg_policies where schemaname = 'public' and tablename = 'feedback' and policyname = 'feedback_insert_public'
-  ) then
-    create policy feedback_insert_public on public.feedback
-      for insert
-      to anon, authenticated
-      with check (true);
-  end if;
+drop policy if exists feedback_insert_public on public.feedback;
+create policy feedback_insert_public on public.feedback
+  for insert
+  to anon, authenticated
+  with check (true);
 
-  if not exists (
-    select 1 from pg_policies where schemaname = 'public' and tablename = 'feedback' and policyname = 'feedback_select_public_approved'
-  ) then
-    create policy feedback_select_public_approved on public.feedback
-      for select
-      to anon
-      using (approved = true);
-  end if;
+drop policy if exists feedback_select_public_approved on public.feedback;
+create policy feedback_select_public_approved on public.feedback
+  for select
+  to anon
+  using (approved = true);
 
-  if not exists (
-    select 1 from pg_policies where schemaname = 'public' and tablename = 'feedback' and policyname = 'feedback_select_auth'
-  ) then
-    create policy feedback_select_auth on public.feedback
-      for select
-      to authenticated
-      using (true);
-  end if;
+drop policy if exists feedback_select_auth on public.feedback;
+create policy feedback_select_auth on public.feedback
+  for select
+  to authenticated
+  using (true);
 
-  if not exists (
-    select 1 from pg_policies where schemaname = 'public' and tablename = 'feedback' and policyname = 'feedback_update_auth'
-  ) then
-    create policy feedback_update_auth on public.feedback
-      for update
-      to authenticated
-      using (true)
-      with check (true);
-  end if;
+drop policy if exists feedback_update_auth on public.feedback;
+create policy feedback_update_auth on public.feedback
+  for update
+  to authenticated
+  using (true)
+  with check (true);
 
-  if not exists (
-    select 1 from pg_policies where schemaname = 'public' and tablename = 'feedback' and policyname = 'feedback_delete_auth'
-  ) then
-    create policy feedback_delete_auth on public.feedback
-      for delete
-      to authenticated
-      using (true);
-  end if;
-end $$;
+drop policy if exists feedback_delete_auth on public.feedback;
+create policy feedback_delete_auth on public.feedback
+  for delete
+  to authenticated
+  using (true);
 
 -- Customers: checkout can insert customer snapshots; admin can read/manage.
-do $$
-begin
-  if not exists (
-    select 1 from pg_policies where schemaname = 'public' and tablename = 'customers' and policyname = 'customers_insert_public'
-  ) then
-    create policy customers_insert_public on public.customers
-      for insert
-      to anon, authenticated
-      with check (true);
-  end if;
+drop policy if exists customers_insert_public on public.customers;
+create policy customers_insert_public on public.customers
+  for insert
+  to anon, authenticated
+  with check (true);
 
-  if not exists (
-    select 1 from pg_policies where schemaname = 'public' and tablename = 'customers' and policyname = 'customers_select_auth'
-  ) then
-    create policy customers_select_auth on public.customers
-      for select
-      to authenticated
-      using (true);
-  end if;
+drop policy if exists customers_select_auth on public.customers;
+create policy customers_select_auth on public.customers
+  for select
+  to authenticated
+  using (true);
 
-  if not exists (
-    select 1 from pg_policies where schemaname = 'public' and tablename = 'customers' and policyname = 'customers_update_auth'
-  ) then
-    create policy customers_update_auth on public.customers
-      for update
-      to authenticated
-      using (true)
-      with check (true);
-  end if;
+drop policy if exists customers_update_auth on public.customers;
+create policy customers_update_auth on public.customers
+  for update
+  to authenticated
+  using (true)
+  with check (true);
 
-  if not exists (
-    select 1 from pg_policies where schemaname = 'public' and tablename = 'customers' and policyname = 'customers_delete_auth'
-  ) then
-    create policy customers_delete_auth on public.customers
-      for delete
-      to authenticated
-      using (true);
-  end if;
-end $$;
+drop policy if exists customers_delete_auth on public.customers;
+create policy customers_delete_auth on public.customers
+  for delete
+  to authenticated
+  using (true);
 
 -- Notifications: checkout can insert order notifications; admin can read/manage.
-do $$
-begin
-  if not exists (
-    select 1 from pg_policies where schemaname = 'public' and tablename = 'notifications' and policyname = 'notifications_insert_public'
-  ) then
-    create policy notifications_insert_public on public.notifications
-      for insert
-      to anon, authenticated
-      with check (true);
-  end if;
+drop policy if exists notifications_insert_public on public.notifications;
+create policy notifications_insert_public on public.notifications
+  for insert
+  to anon, authenticated
+  with check (true);
 
-  if not exists (
-    select 1 from pg_policies where schemaname = 'public' and tablename = 'notifications' and policyname = 'notifications_select_auth'
-  ) then
-    create policy notifications_select_auth on public.notifications
-      for select
-      to authenticated
-      using (true);
-  end if;
+drop policy if exists notifications_select_auth on public.notifications;
+create policy notifications_select_auth on public.notifications
+  for select
+  to authenticated
+  using (true);
 
-  if not exists (
-    select 1 from pg_policies where schemaname = 'public' and tablename = 'notifications' and policyname = 'notifications_update_auth'
-  ) then
-    create policy notifications_update_auth on public.notifications
-      for update
-      to authenticated
-      using (true)
-      with check (true);
-  end if;
+drop policy if exists notifications_update_auth on public.notifications;
+create policy notifications_update_auth on public.notifications
+  for update
+  to authenticated
+  using (true)
+  with check (true);
 
-  if not exists (
-    select 1 from pg_policies where schemaname = 'public' and tablename = 'notifications' and policyname = 'notifications_delete_auth'
-  ) then
-    create policy notifications_delete_auth on public.notifications
-      for delete
-      to authenticated
-      using (true);
-  end if;
-end $$;
+drop policy if exists notifications_delete_auth on public.notifications;
+create policy notifications_delete_auth on public.notifications
+  for delete
+  to authenticated
+  using (true);
