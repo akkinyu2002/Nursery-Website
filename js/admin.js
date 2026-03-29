@@ -30,6 +30,83 @@ document.addEventListener("DOMContentLoaded", async () => {
     notificationsHydrated: false,
   };
 
+  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+  let notificationAudioContext = null;
+  let notificationAudioUnlocked = false;
+
+  function getNotificationAudioContext() {
+    if (!AudioContextClass) return null;
+    if (!notificationAudioContext) {
+      notificationAudioContext = new AudioContextClass();
+    }
+    return notificationAudioContext;
+  }
+
+  async function unlockNotificationAudio() {
+    const context = getNotificationAudioContext();
+    if (!context) return false;
+
+    if (context.state === "running") {
+      notificationAudioUnlocked = true;
+      return true;
+    }
+
+    try {
+      await context.resume();
+      notificationAudioUnlocked = context.state === "running";
+      return notificationAudioUnlocked;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  function registerNotificationAudioUnlock() {
+    const unlock = () => {
+      unlockNotificationAudio().finally(() => {
+        if (notificationAudioUnlocked) {
+          document.removeEventListener("pointerdown", unlock, true);
+          document.removeEventListener("keydown", unlock, true);
+        }
+      });
+    };
+
+    document.addEventListener("pointerdown", unlock, true);
+    document.addEventListener("keydown", unlock, true);
+  }
+
+  async function playOrderNotificationSound() {
+    const context = getNotificationAudioContext();
+    if (!context) return;
+
+    if (context.state !== "running") {
+      const unlocked = await unlockNotificationAudio();
+      if (!unlocked) return;
+    }
+
+    const startAt = context.currentTime;
+    const gainNode = context.createGain();
+    const firstTone = context.createOscillator();
+    const secondTone = context.createOscillator();
+
+    firstTone.type = "sine";
+    firstTone.frequency.setValueAtTime(880, startAt);
+    secondTone.type = "triangle";
+    secondTone.frequency.setValueAtTime(1320, startAt + 0.05);
+
+    gainNode.gain.setValueAtTime(0.0001, startAt);
+    gainNode.gain.exponentialRampToValueAtTime(0.12, startAt + 0.03);
+    gainNode.gain.exponentialRampToValueAtTime(0.0001, startAt + 0.3);
+
+    firstTone.connect(gainNode);
+    secondTone.connect(gainNode);
+    gainNode.connect(context.destination);
+
+    firstTone.start(startAt);
+    secondTone.start(startAt + 0.05);
+    firstTone.stop(startAt + 0.3);
+    secondTone.stop(startAt + 0.3);
+  }
+
   function currentOrders() {
     return state.orders.filter((order) => {
       const search = state.search.trim().toLowerCase();
@@ -69,6 +146,16 @@ document.addEventListener("DOMContentLoaded", async () => {
     const nextIds = new Set(state.notifications.map((item) => item.id));
     if (state.notificationsHydrated && shouldNotify) {
       const freshUnread = state.notifications.filter((item) => !state.knownNotificationIds.has(item.id) && !item.read);
+      const freshOrderAlerts = freshUnread.filter((item) => item.type === "order");
+
+      freshOrderAlerts.forEach((_, index) => {
+        window.setTimeout(() => {
+          playOrderNotificationSound().catch(() => {
+            // Audio can be blocked until user interaction; retry on future alerts.
+          });
+        }, index * 350);
+      });
+
       freshUnread.slice(0, 3).forEach((item) => {
         const descriptor = item.orderId ? `Order ${item.orderId}` : item.title;
         window.NurseryUI.showToast(`New admin alert: ${descriptor}`);
@@ -606,6 +693,8 @@ document.addEventListener("DOMContentLoaded", async () => {
       window.location.href = "admin-login.html";
     });
   }
+
+  registerNotificationAudioUnlock();
 
   const autoRefresh = window.setInterval(() => {
     if (document.hidden) return;
